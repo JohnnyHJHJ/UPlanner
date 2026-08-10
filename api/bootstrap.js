@@ -66,7 +66,8 @@ export default async function handler(req, res) {
       type: 'user', username: u.username, username_normalized: u.username_normalized,
       user_id: u.id, schedule_id: '', name: '', subject: '', day: '', start_time: '', end_time: '',
       visibility: '', created_at: u.created_at, updated_at: u.updated_at,
-      full_name: u.full_name || '', birthday: u.birthday || '',
+      full_name: u.full_name || '',
+      birthday: formatDateOnly(u.birthday),
       degree_program: u.degree_program || '', year_level: u.year_level || '', section: u.section || '',
       pronouns: u.pronouns || '', school: u.school || '', group_id: '', target_user_id: '',
       preference_type: '', profile_color: u.profile_color || '#fca5a5', profile_emoji: u.profile_emoji || '😊'
@@ -121,7 +122,19 @@ export default async function handler(req, res) {
       group_id: '', target_user_id: p.target_user_id || '', preference_type: p.preference_type,
       profile_color: '', profile_emoji: ''
     });
+  function formatDateOnly(value) {
+  if (!value) return '';
 
+  if (typeof value === 'string') {
+    return value.slice(0, 10);
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return '';
+  }
     return res.status(200).json({ session, records });
   } catch (error) {
     console.error('[bootstrap]', error);
