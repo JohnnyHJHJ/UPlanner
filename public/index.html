@@ -426,109 +426,251 @@ async function doLogin() {
 
 // ===== PROFILE SETUP =====
 function profileSetup() {
-    return `<div class="max-w-2xl mx-auto card p-6 sm:p-8">
-        <h2 class="text-xl font-bold text-gray-50">Complete Your Profile</h2>
-        <p class="text-gray-300 text-sm mt-1">Fill in required fields to continue.</p>
-        <p id="ps-err" class="text-red-400 text-sm mt-2 hidden"></p>
+    const colors = [
+        '#fca5a5',
+        '#f87171',
+        '#fbf724',
+        '#fcd34d',
+        '#a3e635',
+        '#4ade80',
+        '#22d3ee',
+        '#06b6d4',
+        '#0ea5e9',
+        '#60a5fa',
+        '#818cf8',
+        '#a78bfa',
+        '#d946ef',
+        '#ec4899',
+        '#f97316',
+        '#fbbf24'
+    ];
 
-        <div class="mt-5 space-y-4">
+    const emojis = [
+        '😊',
+        '🎓',
+        '📚',
+        '🚀',
+        '⭐',
+        '💻',
+        '🎨',
+        '🎭',
+        '🎸',
+        '⚡',
+        '🌟',
+        '🎯',
+        '🦄',
+        '🌈',
+        '🧑‍💻',
+        '👩‍💻',
+        '🧠',
+        '📖',
+        '✨',
+        '🔥'
+    ];
 
-            <div>
-                <label class="form-label">Full Name</label>
-                <input id="ps-name" class="input-field" placeholder="Your full name">
-            </div>
+    let colorButtons = '';
 
-            <div>
-                <label class="form-label">
-                    Birthday <span style="color:var(--accent)">*</span>
-                </label>
-                <input id="ps-bday" type="date" class="input-field" oninput="updateProfileSetupBtn()">
-            </div>
+    colors.forEach(function(color) {
+        colorButtons +=
+            '<button ' +
+            'type="button" ' +
+            'class="w-10 h-10 rounded-lg border-2 cursor-pointer hover:scale-110 transition-transform" ' +
+            'style="background-color:' + color + '; border-color:#4b5563;" ' +
+            'onclick="selectProfileColor(\'' + color + '\', this)" ' +
+            'aria-label="Select color ' + color + '">' +
+            '</button>';
+    });
 
-            <div>
-                <label class="form-label">
-                    School <span style="color:var(--accent)">*</span>
-                </label>
-                <input id="ps-school" class="input-field" placeholder="e.g. UP Diliman" oninput="updateProfileSetupBtn()">
-            </div>
+    let emojiButtons = '';
 
-            <div>
-                <label class="form-label">Degree Program</label>
-                <input id="ps-degree" class="input-field" placeholder="e.g. BS Computer Science">
-            </div>
+    emojis.forEach(function(emoji) {
+        emojiButtons +=
+            '<button ' +
+            'type="button" ' +
+            'class="w-10 h-10 rounded-lg text-xl border-2 border-transparent hover:border-gray-600 hover:bg-gray-700 cursor-pointer transition" ' +
+            'onclick="selectProfileEmoji(\'' + emoji + '\', this)" ' +
+            'aria-label="Select emoji ' + emoji + '">' +
+            emoji +
+            '</button>';
+    });
 
-            <div>
-                <label class="form-label">Year Level</label>
-                <input id="ps-year" class="input-field" placeholder="e.g. 3rd Year">
-            </div>
+    return `
+        <div class="max-w-2xl mx-auto card p-6 sm:p-8">
 
-            <div>
-                <label class="form-label">Section/Block</label>
-                <input id="ps-section" class="input-field" placeholder="e.g. Block A">
-            </div>
+            <h2 class="text-xl font-bold text-gray-50">
+                Complete Your Profile
+            </h2>
 
-            <div>
-                <label class="form-label">Pronouns</label>
-                <input id="ps-pronouns" class="input-field" placeholder="e.g. she/her">
-            </div>
+            <p class="text-gray-300 text-sm mt-1">
+                Fill in required fields to continue.
+            </p>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p id="ps-err" class="text-red-400 text-sm mt-2 hidden"></p>
+
+            <div class="mt-5 space-y-4">
 
                 <div>
-                    <label class="form-label">Profile Color</label>
-
-                    <div class="grid grid-cols-6 gap-2 mt-1">
-                        ${getColorOptions().map(function(c) {
-                            return '<button type="button" class="w-10 h-10 rounded-lg border-2" style="background-color:' + c + ';border-color:#4b4b4b" onclick="selectProfileColor(\'' + c + '\',this)"></button>';
-                        }).join('')}
-                    </div>
-
-                    <p id="ps-color-label" class="text-xs text-gray-400 mt-1">
-                        Selected: Red
-                    </p>
+                    <label class="form-label">Full Name</label>
+                    <input
+                        id="ps-name"
+                        class="input-field"
+                        placeholder="Your full name">
                 </div>
 
                 <div>
-                    <label class="form-label">Profile Emoji</label>
+                    <label class="form-label">
+                        Birthday
+                        <span style="color:var(--accent)">*</span>
+                    </label>
 
-                    <div class="grid grid-cols-6 gap-1 mt-1">
-                        ${getEmojiOptions().map(function(e) {
-                            return '<button type="button" class="w-10 h-10 rounded-lg text-xl border-2 border-transparent hover:border-gray-600" onclick="selectProfileEmoji(\'' + e + '\',this)">' + e + '</button>';
-                        }).join('')}
+                    <input
+                        id="ps-bday"
+                        type="date"
+                        class="input-field"
+                        oninput="updateProfileSetupBtn()">
+                </div>
+
+                <div>
+                    <label class="form-label">
+                        School
+                        <span style="color:var(--accent)">*</span>
+                    </label>
+
+                    <input
+                        id="ps-school"
+                        class="input-field"
+                        placeholder="e.g. UP Diliman"
+                        oninput="updateProfileSetupBtn()">
+                </div>
+
+                <div>
+                    <label class="form-label">Degree Program</label>
+                    <input
+                        id="ps-degree"
+                        class="input-field"
+                        placeholder="e.g. BS Computer Science">
+                </div>
+
+                <div>
+                    <label class="form-label">Year Level</label>
+                    <input
+                        id="ps-year"
+                        class="input-field"
+                        placeholder="e.g. 3rd Year">
+                </div>
+
+                <div>
+                    <label class="form-label">Section/Block</label>
+                    <input
+                        id="ps-section"
+                        class="input-field"
+                        placeholder="e.g. Block A">
+                </div>
+
+                <div>
+                    <label class="form-label">Pronouns</label>
+                    <input
+                        id="ps-pronouns"
+                        class="input-field"
+                        placeholder="e.g. she/her">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- PROFILE COLOR -->
+                    <div>
+                        <label class="form-label">
+                            Profile Color
+                        </label>
+
+                        <div class="grid grid-cols-6 gap-2 mt-2">
+                            ${colorButtons}
+                        </div>
+
+                        <p
+                            id="ps-color-label"
+                            class="text-xs text-gray-400 mt-2">
+                            Selected: Red
+                        </p>
                     </div>
 
-                    <p id="ps-emoji-label" class="text-xs text-gray-400 mt-1">
-                        Selected: 😊
-                    </p>
+                    <!-- PROFILE EMOJI -->
+                    <div>
+                        <label class="form-label">
+                            Profile Emoji
+                        </label>
+
+                        <div class="grid grid-cols-6 gap-1 mt-2">
+                            ${emojiButtons}
+                        </div>
+
+                        <p
+                            id="ps-emoji-label"
+                            class="text-xs text-gray-400 mt-2">
+                            Selected: 😊
+                        </p>
+                    </div>
+
                 </div>
 
             </div>
-        </div>
 
-        <div class="flex gap-3 mt-6">
-            <button
-                id="ps-continue-btn"
-                class="btn-primary w-full"
-                onclick="saveProfileSetup()"
-                disabled>
-                Continue
-            </button>
-        </div>
+            <div class="flex gap-3 mt-6">
+                <button
+                    id="ps-continue-btn"
+                    class="btn-primary w-full"
+                    onclick="saveProfileSetup()"
+                    disabled>
+                    Continue
+                </button>
+            </div>
 
-    </div>`;
+        </div>
+    `;
 }
-    function selectProfileColor(hex, el) {
-    el.parentElement.querySelectorAll('button').forEach(e => e.style.borderColor = '#4b4b4b');
-    el.style.borderColor = '#fca5a5';
-    document.getElementById('ps-color-label').textContent = 'Selected: ' + getColorName(hex);
+
+
+function selectProfileColor(hex, el) {
+    const parent = el.parentElement;
+
+    parent.querySelectorAll('button').forEach(function(button) {
+        button.style.borderColor = '#4b5563';
+        button.style.transform = 'scale(1)';
+    });
+
+    el.style.borderColor = '#ffffff';
+    el.style.transform = 'scale(1.1)';
+
+    const label = document.getElementById('ps-color-label');
+
+    if (label) {
+        label.textContent = 'Selected: ' + hex;
+    }
+
     sessionStorage.setItem('temp_color', hex);
 }
 
-function selectProfileEmoji(em, el) {
-    el.parentElement.querySelectorAll('button').forEach(e => e.style.borderColor = 'transparent');
-    el.style.borderColor = '#fca5a5';
-    document.getElementById('ps-emoji-label').textContent = 'Selected: ' + em;
-    sessionStorage.setItem('temp_emoji', em);
+
+function selectProfileEmoji(emoji, el) {
+    const parent = el.parentElement;
+
+    parent.querySelectorAll('button').forEach(function(button) {
+        button.style.borderColor = 'transparent';
+        button.style.backgroundColor = '';
+        button.style.transform = 'scale(1)';
+    });
+
+    el.style.borderColor = '#ffffff';
+    el.style.backgroundColor = 'rgba(255,255,255,0.1)';
+    el.style.transform = 'scale(1.1)';
+
+    const label = document.getElementById('ps-emoji-label');
+
+    if (label) {
+        label.textContent = 'Selected: ' + emoji;
+    }
+
+    sessionStorage.setItem('temp_emoji', emoji);
 }
 function updateProfileSetupBtn() { const bday = document.getElementById('ps-bday'); const school = document.getElementById('ps-school'); const btn = document.getElementById('ps-continue-btn'); if (btn) btn.disabled = !(bday && bday.value && school && school.value.trim()); }
 
