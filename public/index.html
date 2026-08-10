@@ -767,13 +767,207 @@ function viewProfileView(p) {
   const emoji = user.profile_emoji || '😊';
   const add = (label, val) => { if (val) fields += `<div class="flex flex-col"><span class="text-xs text-gray-400 uppercase font-semibold">${label}</span><span class="text-gray-100">${escHtml(val)}</span></div>`; };
   add('Full Name', user.full_name);
-  if (user.birthday) { const d = new Date(user.birthday + 'T00:00:00'); const mo = d.toLocaleString('en', { month: 'long' }); const dy = d.getDate(); const age = calcAge(user.birthday); fields += `<div class="flex flex-col"><span class="text-xs text-gray-400 uppercase font-semibold">Birthday</span><span class="text-gray-100">${mo} ${dy} (${age} y/o)</span></div>`; }
+  if (user.birthday) {
+    const formattedBirthday = formatBirthday(user.birthday, true);
+
+    if (formattedBirthday) {
+        fields += `
+            <div class="flex flex-col">
+                <span class="text-xs text-gray-400 uppercase font-semibold">
+                    Birthday
+                </span>
+                <span class="text-gray-100">
+                    ${escHtml(formattedBirthday)}
+                </span>
+            </div>
+        `;
+    }
+}
   add('School', user.school); add('Degree Program', user.degree_program); add('Year Level', user.year_level); add('Section/Block', user.section); add('Pronouns', user.pronouns);
   div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2 mb-6"><h2 class="text-2xl font-bold text-gray-50">${escHtml(user.username)}'s Profile</h2><button class="btn-secondary" onclick="goBack('search')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="card p-5 max-w-lg"><div class="mb-4"><div class="flex items-center gap-3 mb-2"><span style="font-size:2rem;line-height:1">${emoji}</span><div><p class="font-bold text-gray-50 text-lg">${escHtml(user.username)}</p>${user.pronouns ? `<p class="text-gray-300 text-sm">${escHtml(user.pronouns)}</p>` : ''}</div></div></div>${fields ? `<div class="space-y-3">${fields}</div>` : '<p class="text-gray-400 text-sm">No profile info shared yet.</p>'}</div>`;
   return div;
 }
-function calcAge(bday) { const b = new Date(bday + 'T00:00:00'); const now = new Date(); let age = now.getFullYear() - b.getFullYear(); const m = now.getMonth() - b.getMonth(); if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--; return age; }
+// ===== SAFE BIRTHDAY / DATE HELPERS =====
 
+function normalizeBirthday(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    let s = String(value).trim();
+
+    if (!s) {
+        return '';
+    }
+
+    // Already YYYY-MM-DD
+    let match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+    if (match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+
+        if (isValidBirthdayParts(year, month, day)) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        return '';
+    }
+
+    // ISO datetime:
+    // 2004-05-17T00:00:00.000Z
+    match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})T/);
+
+    if (match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+
+        if (isValidBirthdayParts(year, month, day)) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        return '';
+    }
+
+    // MM/DD/YYYY
+    match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (match) {
+        const month = Number(match[1]);
+        const day = Number(match[2]);
+        const year = Number(match[3]);
+
+        if (isValidBirthdayParts(year, month, day)) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        return '';
+    }
+
+    // MM-DD-YYYY
+    match = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+
+    if (match) {
+        const month = Number(match[1]);
+        const day = Number(match[2]);
+        const year = Number(match[3]);
+
+        if (isValidBirthdayParts(year, month, day)) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        return '';
+    }
+
+    return '';
+}
+
+
+function isValidBirthdayParts(year, month, day) {
+    if (!Number.isInteger(year) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(day)) {
+        return false;
+    }
+
+    if (year < 1900 || year > new Date().getFullYear()) {
+        return false;
+    }
+
+    if (month < 1 || month > 12) {
+        return false;
+    }
+
+    const test = new Date(year, month - 1, day);
+
+    return (
+        test.getFullYear() === year &&
+        test.getMonth() === month - 1 &&
+        test.getDate() === day
+    );
+}
+
+
+function getBirthdayDate(value) {
+    const normalized = normalizeBirthday(value);
+
+    if (!normalized) {
+        return null;
+    }
+
+    const parts = normalized.split('-');
+
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+
+    const date = new Date(year, month - 1, day);
+
+    if (isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date;
+}
+
+
+function calcAge(bday) {
+    const birthDate = getBirthdayDate(bday);
+
+    if (!birthDate) {
+        return null;
+    }
+
+    const now = new Date();
+
+    let age =
+        now.getFullYear() -
+        birthDate.getFullYear();
+
+    const monthDifference =
+        now.getMonth() -
+        birthDate.getMonth();
+
+    if (
+        monthDifference < 0 ||
+        (
+            monthDifference === 0 &&
+            now.getDate() < birthDate.getDate()
+        )
+    ) {
+        age--;
+    }
+
+    return age;
+}
+
+
+function formatBirthday(bday, longMonth = false) {
+    const date = getBirthdayDate(bday);
+
+    if (!date) {
+        return '';
+    }
+
+    const month = date.toLocaleString(
+        'en-US',
+        {
+            month: longMonth ? 'long' : 'short'
+        }
+    );
+
+    const day = date.getDate();
+
+    const age = calcAge(bday);
+
+    if (age === null) {
+        return `${month} ${day}`;
+    }
+
+    return `${month} ${day} (${age})`;
+}
 // ===== SCHEDULE EDITOR =====
 let editorRows = []; let editorScheduleId = ''; let editorPersonName = ''; let editorUserId = ''; let editorReturnView = null; let editorReturnParams = null;
 
@@ -900,7 +1094,7 @@ function renderSearchTable(users, session, hiddenIds, container) {
     if (sched) actions += `<button class="btn-secondary text-xs" onclick="showView('view-schedule',{scheduleId:'${sched.schedule_id}'})">View</button> `;
     if (isMe && sched) actions += `<button class="btn-secondary text-xs" onclick="showView('edit-schedule',{scheduleId:'${sched.schedule_id}'})">Edit</button> `;
     if (!isMe) { actions += `<button class="btn-secondary text-xs" onclick="showView('view-profile',{userId:'${u.user_id}'})">Profile</button> `; actions += `<button class="btn-secondary text-xs" onclick="addToCompareFromDir('${u.user_id}')">Compare</button> `; actions += `<button class="btn-secondary text-xs" onclick="toggleHide('${u.user_id}')">${hidden ? 'Unhide' : 'Hide'}</button>`; }
-    let bdayStr = ''; if (u.birthday) { const d = new Date(u.birthday + 'T00:00:00'); const mo = d.toLocaleString('en', { month: 'short' }); const dy = d.getDate(); const age = calcAge(u.birthday); bdayStr = `${mo} ${dy} (${age})`; }
+    const bdayStr = formatBirthday(u.birthday);
     return `<tr><td class="font-medium text-gray-100"><span style="color:${color};font-size:1.1rem;margin-right:6px">${emoji}</span>${escHtml(u.username)}${hidden ? ' <span class="badge-hidden">Hidden</span>' : ''}</td><td>${escHtml(u.full_name || '')}</td><td>${escHtml(u.school || '')}</td><td>${escHtml(u.degree_program || '')}</td><td>${bdayStr}</td><td><div class="flex gap-1 flex-wrap">${actions}</div></td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
