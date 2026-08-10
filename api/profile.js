@@ -49,7 +49,17 @@ export default async function handler(req, res) {
     ]);
 
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
-    return res.status(200).json({ user: result.rows[0] });
+    const user = result.rows[0];
+
+    if (user.birthday instanceof Date && !Number.isNaN(user.birthday.getTime())) {
+      user.birthday = user.birthday.toISOString().slice(0, 10);
+    } else if (user.birthday) {
+      user.birthday = String(user.birthday).slice(0, 10);
+    } else {
+      user.birthday = '';
+    }
+    
+    return res.status(200).json({ user });
   } catch (error) {
     if (error.code === '23505') return res.status(409).json({ error: 'Username already taken.' });
     console.error(error);
