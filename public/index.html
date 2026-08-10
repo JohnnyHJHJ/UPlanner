@@ -116,7 +116,69 @@ function logDataError(operation, record, result) {
   const msg = result && result.error ? result.error.message || String(result.error) : 'Unknown error';
   console.error(`[DataError] ${operation}:`, msg, record);
 }
+async function refreshData() {
+    try {
+        const res = await fetch('/api/bootstrap', {
+            credentials: 'include'
+        });
 
+        if (!res.ok) {
+            console.error('Failed to refresh data:', res.status);
+            return false;
+        }
+
+        const data = await res.json();
+
+        allData = [];
+
+        if (data.users) {
+            allData.push(...data.users.map(u => ({
+                type: 'user',
+                ...u
+            })));
+        }
+
+        if (data.schedules) {
+            allData.push(...data.schedules.map(s => ({
+                type: 'schedule',
+                ...s
+            })));
+        }
+
+        if (data.entries) {
+            allData.push(...data.entries.map(e => ({
+                type: 'entry',
+                ...e
+            })));
+        }
+
+        if (data.groups) {
+            allData.push(...data.groups.map(g => ({
+                type: 'group',
+                ...g
+            })));
+        }
+
+        if (data.group_members) {
+            allData.push(...data.group_members.map(gm => ({
+                type: 'group_member',
+                ...gm
+            })));
+        }
+
+        if (data.preferences) {
+            allData.push(...data.preferences.map(p => ({
+                type: 'user_preference',
+                ...p
+            })));
+        }
+
+        return true;
+    } catch (err) {
+        console.error('refreshData failed:', err);
+        return false;
+    }
+}
 async function apiRequest(url, options = {}) {
   const response = await fetch(url, {
     credentials: 'include',
