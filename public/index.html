@@ -1,62 +1,893 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
+<html lang="en"><head><meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UPlanner</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <style>
-    body{font-family:'DM Sans',sans-serif;background:#111827;color:#f3f4f6}
-    .btn{background:#dc2626;color:white;border-radius:.625rem;padding:.75rem 1.5rem;font-weight:600}
-    .card{background:#1f2937;border:1px solid #374151;border-radius:.75rem}
-    .input{width:100%;background:#0f1419;color:#f3f4f6;border:1px solid #374151;border-radius:.5rem;padding:.75rem}
-  </style>
-</head>
-<body>
-<main id="app" class="max-w-5xl mx-auto px-4 py-10"></main>
-<script>
-let state={session:null,users:[],schedules:[],entries:[],groups:[],group_members:[],preferences:[]};
+body{font-family:'DM Sans',sans-serif;background:#111827;color:#f3f4f6;overflow-x:hidden}
+:root{--primary:#dc2626;--primary-light:#ef4444;--primary-dark:#991b1b;--accent:#dc2626;--accent-light:#fca5a5;--secondary:#dc2626;--success:#059669;--neutral-50:#f9fafb;--neutral-100:#f3f4f6;--neutral-200:#e5e7eb;--neutral-300:#d1d5e1;--neutral-400:#cbd5e1;--neutral-600:#4b5563;--neutral-700:#374151;--neutral-800:#1f2937;--neutral-900:#111827;--card-bg:#1f2937;--card-border:#374151;--vh:1vh}
+*{box-sizing:border-box}
+.btn-primary{background:var(--primary);color:#fff;border-radius:0.625rem;padding:0.75rem 1.75rem;font-weight:600;transition:all .2s;min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:0.95rem;box-shadow:0 2px 4px rgba(220,38,38,0.2);border:none;cursor:pointer}
+.btn-primary:hover{background:var(--primary-light);transform:translateY(-2px);box-shadow:0 4px 8px rgba(220,38,38,0.3)}
+.btn-primary:disabled{background:#6b7280;cursor:not-allowed;opacity:0.6;transform:none}
+.btn-secondary{background:#273449;color:#f3f4f6;border-radius:0.625rem;padding:0.625rem 1.5rem;font-weight:500;transition:all .2s;border:1px solid #374151;min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;box-shadow:0 1px 2px rgba(0,0,0,0.3);cursor:pointer}
+.btn-secondary:hover{background:#334155;border-color:#4b5563;box-shadow:0 2px 4px rgba(0,0,0,0.4)}
+.btn-secondary:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none}
+.btn-danger{background:#dc2626;color:#fff;border-radius:0.625rem;padding:0.625rem 1.5rem;font-weight:600;min-height:44px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 1px 2px rgba(220,38,38,0.2);border:none;cursor:pointer}
+.btn-danger:hover{background:#b91c1c;box-shadow:0 2px 4px rgba(220,38,38,0.3);transform:translateY(-1px)}
+.btn-danger:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:all .2s}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th{background:var(--card-bg);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;padding:0.75rem;text-align:left;color:#9ca3af;border-bottom:1px solid var(--card-border)}
+td{padding:0.75rem;border-bottom:1px solid #273449;font-size:0.875rem;color:#e5e7eb;vertical-align:top}
+tr:nth-child(even) td{background:#0f1419}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#dc2626;color:#fff;padding:0.75rem 1.25rem;border-radius:0.5rem;font-size:0.875rem;z-index:999;animation:fadeIn .3s;max-width:90vw}
+.toast.toast-error{background:#991b1b}
+.toast.toast-success{background:#059669}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.timetable-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:0.5rem;border:1px solid var(--card-border)}
+.timetable-grid{display:grid;min-width:600px;background:var(--card-bg)}
+.timetable-grid .tt-header{background:#273449;font-weight:600;font-size:0.7rem;text-align:center;padding:0.5rem 0.25rem;border-bottom:1px solid var(--card-border);border-right:1px solid var(--card-border);color:#d1d5e1}
+.timetable-grid .tt-time-col{position:relative;border-right:1px solid var(--card-border);background:#0f1419}
+.timetable-grid .timetable-day{position:relative;border-right:1px solid #1f2937}
+.timetable-day .guide-line{position:absolute;left:0;right:0;border-top:1px solid #1f2937;pointer-events:none}
+.timetable-day .guide-line.hour{border-top-color:#273449}
+.tt-time-label{position:absolute;right:4px;font-size:0.6rem;color:#9ca3af;transform:translateY(-50%);white-space:nowrap}
+.tt-block{position:absolute;border-radius:0.375rem;padding:3px 4px;font-size:0.65rem;font-weight:600;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;line-height:1.2;border:2px solid rgba(255,255,255,0.2);box-shadow:0 1px 3px rgba(0,0,0,.4);min-height:18px;cursor:pointer}
+.tt-block .bl-name{color:#1a1a1a;word-break:break-word;font-weight:700}
+.tt-block .bl-time{color:#292929;font-size:0.55rem;margin-top:1px;opacity:0.9}
+.tt-block .bl-person{font-size:0.6rem;color:#111;font-weight:700;margin-bottom:1px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:#273449;color:#fecaca;border-radius:9999px;padding:0.25rem 0.75rem;font-size:0.8rem;font-weight:500;border:1px solid #374151}
+.chip button{background:none;border:none;color:#fecaca;cursor:pointer;font-size:1rem;line-height:1;padding:0}
+.chip button:hover{color:#fda2a2}
+.nav-link{cursor:pointer;padding:0.5rem 0.75rem;border-radius:0.375rem;font-size:0.875rem;font-weight:500;color:#9ca3af;transition:background .15s;min-height:44px;display:inline-flex;align-items:center;gap:4px}
+.nav-link:hover{background:#273449}
+.nav-link.active{background:#273449;color:#fca5a5}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #666;border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{display:flex;align-items:center;justify-content:center;gap:8px;padding:2rem;color:#7a7a7a}
+.input-field{width:100%;border:1px solid #374151;border-radius:0.5rem;padding:0.75rem 1rem;outline:none;background:#0f1419;color:#f3f4f6;font-size:0.95rem;min-height:44px;transition:all .2s}
+.input-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(220,38,38,0.1)}
+.input-field::placeholder{color:#6b7280}
+.form-label{display:block;font-size:0.875rem;font-weight:600;color:#f3f4f6;margin-bottom:0.5rem}
+.mobile-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:0.75rem;padding:1rem}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card-bg);border-top:1px solid var(--card-border);z-index:50;padding:0.25rem 0}
+.bottom-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0.5rem 0;font-size:0.6rem;color:#6b7280;cursor:pointer;min-height:50px;flex:1}
+.bottom-nav-item.active{color:#fca5a5}
+.bottom-nav-item:hover{color:#fca5a5}
+@media(max-width:767px){
+.bottom-nav{display:flex}
+#main-nav .nav-links{display:none!important}
+body{padding-bottom:60px}
+.timetable-grid{min-width:560px}
+.tt-header{font-size:0.6rem!important;padding:0.4rem 0.15rem!important}
+.tt-time-label{font-size:0.55rem!important}
+}
+.tt-tooltip{position:fixed;background:#273449;border:1px solid var(--card-border);border-radius:0.5rem;padding:0.75rem;font-size:0.8rem;color:#f3f4f6;z-index:100;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+select.input-field{appearance:auto}
+.badge-hidden{background:#7c2d12;color:#fed7aa;font-size:0.65rem;padding:2px 6px;border-radius:9999px;font-weight:600}
+</style>
+ </head>
+ <body data-template-id="__page-root" class="min-h-screen">
+  <nav id="main-nav" class="hidden border-b sticky top-0 z-50" style="background:var(--card-bg);border-color:var(--card-border)">
+   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14"><span data-template-id="nav-brand" class="canva-text font-bold text-lg cursor-pointer" style="color: rgb(220, 38, 38); font-weight: 700; font-style: normal; font-size: 22px;" onclick="showView('dashboard')">UPlanner</span>
+    <div class="nav-links flex items-center gap-1 flex-wrap"><span class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:16px;height:16px"></i><span class="hidden md:inline">Home</span></span><span class="nav-link" data-nav="search"><i data-lucide="search" style="width:16px;height:16px"></i><span class="hidden md:inline">Search</span></span><span class="nav-link" data-nav="own-schedule"><i data-lucide="calendar" style="width:16px;height:16px"></i><span class="hidden md:inline">Schedule</span></span><span class="nav-link" data-nav="compare"><i data-lucide="git-compare" style="width:16px;height:16px"></i><span class="hidden md:inline">Compare</span></span><span class="nav-link" data-nav="groups"><i data-lucide="users" style="width:16px;height:16px"></i><span class="hidden md:inline">Groups</span></span><span class="nav-link" data-nav="profile"><i data-lucide="user" style="width:16px;height:16px"></i><span class="hidden md:inline">Profile</span></span><span class="nav-link" data-nav="logout" style="color:#f87171"><i data-lucide="log-out" style="width:16px;height:16px"></i><span class="hidden md:inline">Logout</span></span>
+    </div>
+   </div>
+  </nav>
+  <div id="bottom-nav" class="bottom-nav hidden">
+   <div class="bottom-nav-item" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:20px;height:20px"></i>Home
+   </div>
+   <div class="bottom-nav-item" data-nav="search"><i data-lucide="search" style="width:20px;height:20px"></i>Search
+   </div>
+   <div class="bottom-nav-item" data-nav="own-schedule"><i data-lucide="calendar" style="width:20px;height:20px"></i>Sched
+   </div>
+   <div class="bottom-nav-item" data-nav="groups"><i data-lucide="users" style="width:20px;height:20px"></i>Groups
+   </div>
+   <div class="bottom-nav-item" data-nav="compare"><i data-lucide="git-compare" style="width:20px;height:20px"></i>Compare
+   </div>
+  </div>
+  <main class="max-w-5xl mx-auto px-4 py-6" id="app">
+   <div class="loading-overlay"><span class="spinner"></span> Connecting to UPlanner...
+   </div>
+  </main>
+  <div id="tt-tooltip" class="tt-tooltip hidden"></div>
+  <script>
+lucide.createIcons();
 
-async function api(url, options={}) {
-  const r=await fetch(url,{credentials:'include',...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
-  const text=await r.text();
-  let data={}; try{data=text?JSON.parse(text):{}}catch{}
-  if(!r.ok) throw new Error(data.error||'Request failed');
+// ===== CENTRALIZED STATE =====
+let allData = [];
+let sdkReady = false;
+let sdkError = false;
+let sdkInitializing = false;
+let sdkInitialized = false;
+
+let currentView = 'landing';
+let currentParams = null;
+let previousView = null;
+let previousParams = null;
+let showHiddenPeople = false;
+
+// ===== VERCEL / POSTGRES DATA LAYER =====
+function logDataError(operation, record, result) {
+  const msg = result && result.error ? result.error.message || String(result.error) : 'Unknown error';
+  console.error(`[DataError] ${operation}:`, msg, record);
+}
+
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: 'include',
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  const text = await response.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch (_) {}
+  if (!response.ok) {
+    const err = new Error(data.error || `Request failed (${response.status})`);
+    err.status = response.status;
+    throw err;
+  }
   return data;
 }
 
-async function load() {
-  try { state=await api('/api/bootstrap'); render(); }
-  catch(e) { app.innerHTML='<div class="card p-8"><h1 class="text-2xl font-bold">UPlanner</h1><p class="mt-3 text-gray-300">'+e.message+'</p></div>'; }
+function applyBootstrap(data) {
+  allData = Array.isArray(data.records) ? data.records : [];
+  if (data.session) {
+    setSession(data.session.userId, data.session.username);
+  } else {
+    clearSession();
+  }
+  sdkReady = true;
+  sdkError = false;
+  sdkInitialized = true;
+  render(currentParams);
 }
 
-function render() {
-  const app=document.getElementById('app');
-  if(!state.session) {
-    app.innerHTML=`<div class="min-h-screen flex items-center justify-center"><div class="card p-8 w-full max-w-md">
-      <h1 class="text-5xl font-bold mb-2">UPlanner</h1>
-      <p class="text-gray-300 mb-8">Find the time that works for everyone.</p>
-      <input id="username" class="input mb-3" placeholder="Nickname">
-      <div class="flex gap-3"><button class="btn flex-1" onclick="signup()">Sign Up</button><button class="btn flex-1" onclick="login()">Log In</button></div>
-    </div></div>`;
-    return;
+async function initializeDataLayer() {
+  if (sdkInitializing) return;
+  sdkInitializing = true;
+  sdkError = false;
+  try {
+    const data = await apiRequest('/api/bootstrap');
+    applyBootstrap(data);
+  } catch (e) {
+    console.error('[Backend] Failed to load UPlanner data:', e);
+    sdkError = true;
+    sdkReady = false;
+    renderConnectionError();
+  } finally {
+    sdkInitializing = false;
   }
-  const u=state.users.find(x=>x.id===state.session.userId);
-  app.innerHTML=`<div class="flex justify-between items-center mb-6"><div><h1 class="text-3xl font-bold">UPlanner</h1><p class="text-gray-300">Welcome, ${esc(u?.full_name||u?.username||state.session.username)}</p></div><button class="btn" onclick="logout()">Logout</button></div>
-    <div class="grid sm:grid-cols-2 gap-4">
-      <div class="card p-6"><h2 class="font-bold text-xl">People</h2><p class="text-gray-300 mt-2">${state.users.length} users loaded.</p></div>
-      <div class="card p-6"><h2 class="font-bold text-xl">Schedules</h2><p class="text-gray-300 mt-2">${state.schedules.length} public/owned schedules loaded.</p></div>
-    </div>
-    <p class="text-gray-400 text-sm mt-8">This is the Vercel backend migration scaffold. Move the existing UPlanner UI functions into this frontend after replacing their data calls with the API layer.</p>`;
 }
-function esc(x){return String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
-async function signup(){await auth('signup')}
-async function login(){await auth('login')}
-async function auth(action){const username=document.getElementById('username').value.trim();if(!username)return alert('Enter a nickname.');try{await api('/api/auth',{method:'POST',body:JSON.stringify({action,username})});await load()}catch(e){alert(e.message)}}
-async function logout(){await api('/api/auth',{method:'DELETE'});await load()}
-load();
+
+async function refreshData() {
+  const data = await apiRequest('/api/bootstrap');
+  applyBootstrap(data);
+  return data;
+}
+
+function renderConnectionError() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="card p-8 max-w-md mx-auto mt-16 text-center"><h2 class="text-xl font-bold text-red-400">Unable to connect</h2><p class="text-gray-300 mt-2">Could not connect to the UPlanner backend.</p><button class="btn-primary mt-4" onclick="retryConnection()">Retry</button></div>`;
+}
+
+function retryConnection() {
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="loading-overlay"><span class="spinner"></span> Connecting to UPlanner...</div>';
+  sdkInitializing = false;
+  sdkInitialized = false;
+  sdkReady = false;
+  sdkError = false;
+  initializeDataLayer();
+}
+
+async function createRecord(record) {
+  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
+  try {
+    const result = await apiRequest('/api/data', { method: 'POST', body: JSON.stringify({ record }) });
+    if (result.record) allData.push(result.record);
+    return { isOk: true, record: result.record };
+  } catch (e) {
+    logDataError('create', record, { error: e });
+    return { isOk: false, error: e };
+  }
+}
+
+async function updateRecord(record) {
+  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
+  try {
+    const result = await apiRequest('/api/data', { method: 'PATCH', body: JSON.stringify({ record }) });
+    if (result.record) {
+      const idx = allData.findIndex(r => recordIdentity(r) === recordIdentity(result.record));
+      if (idx >= 0) allData[idx] = result.record;
+      else {
+        const oldIdx = allData.findIndex(r => recordIdentity(r) === recordIdentity(record));
+        if (oldIdx >= 0) allData[oldIdx] = result.record;
+        else allData.push(result.record);
+      }
+    }
+    return { isOk: true, record: result.record };
+  } catch (e) {
+    logDataError('update', record, { error: e });
+    return { isOk: false, error: e };
+  }
+}
+
+async function deleteRecord(record) {
+  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
+  try {
+    await apiRequest('/api/data', { method: 'DELETE', body: JSON.stringify({ record }) });
+    const idx = allData.findIndex(r => recordIdentity(r) === recordIdentity(record));
+    if (idx >= 0) allData.splice(idx, 1);
+    return { isOk: true };
+  } catch (e) {
+    logDataError('delete', record, { error: e });
+    return { isOk: false, error: e };
+  }
+}
+
+function recordIdentity(r) {
+  if (!r) return '';
+  if (r.type === 'user') return `user:${r.user_id}`;
+  if (r.type === 'schedule') return `schedule:${r.schedule_id}`;
+  if (r.type === 'entry') return `entry:${r.schedule_id}|${r.subject}|${r.day}|${r.start_time}|${r.end_time}`;
+  if (r.type === 'group') return `group:${r.group_id}`;
+  if (r.type === 'group_member') return `group_member:${r.group_id}|${r.target_user_id}`;
+  if (r.type === 'user_preference') return `user_preference:${r.user_id}|${r.target_user_id}|${r.preference_type}`;
+  return JSON.stringify(r);
+}
+
+// ===== RECORD FACTORIES =====
+function createUserRecord(username, userId) {
+  return { type:'user', username, username_normalized:username.toLowerCase(), user_id:userId, schedule_id:'', name:'', subject:'', day:'', start_time:'', end_time:'', visibility:'', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:'', target_user_id:'', preference_type:'', profile_color:'#fca5a5', profile_emoji:'😊' };
+}
+function createScheduleRecord(userId, scheduleId, name) {
+  return { type:'schedule', username:'', username_normalized:'', user_id:userId, schedule_id:scheduleId, name, subject:'', day:'', start_time:'', end_time:'', visibility:'public', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:'', target_user_id:'', preference_type:'', profile_color:'', profile_emoji:'' };
+}
+function createEntryRecord(userId, scheduleId, subject, day, startTime, endTime) {
+  return { type:'entry', username:'', username_normalized:'', user_id:userId, schedule_id:scheduleId, name:'', subject, day, start_time:startTime, end_time:endTime, visibility:'', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:'', target_user_id:'', preference_type:'', profile_color:'', profile_emoji:'' };
+}
+function createGroupRecord(userId, groupId, name) {
+  return { type:'group', username:'', username_normalized:'', user_id:userId, schedule_id:'', name, subject:'', day:'', start_time:'', end_time:'', visibility:'', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:groupId, target_user_id:'', preference_type:'', profile_color:'', profile_emoji:'' };
+}
+function createGroupMemberRecord(userId, groupId, targetUserId) {
+  return { type:'group_member', username:'', username_normalized:'', user_id:userId, schedule_id:'', name:'', subject:'', day:'', start_time:'', end_time:'', visibility:'', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:groupId, target_user_id:targetUserId, preference_type:'', profile_color:'', profile_emoji:'' };
+}
+function createUserPreferenceRecord(userId, targetUserId, prefType) {
+  return { type:'user_preference', username:'', username_normalized:'', user_id:userId, schedule_id:'', name:'', subject:'', day:'', start_time:'', end_time:'', visibility:'', created_at:new Date().toISOString(), updated_at:new Date().toISOString(), full_name:'', birthday:'', degree_program:'', year_level:'', section:'', pronouns:'', school:'', group_id:'', target_user_id:targetUserId, preference_type:prefType, profile_color:'', profile_emoji:'' };
+}
+
+// ===== PURE CACHE READERS =====
+function getRecords(type) { return allData.filter(r => r.type === type); }
+function findUserByNormalized(norm) { return getRecords('user').find(r => r.username_normalized === norm); }
+function findUserById(uid) { return getRecords('user').find(r => r.user_id === uid); }
+function getUserSchedules(userId) { return getRecords('schedule').filter(r => r.user_id === userId); }
+function getScheduleEntries(scheduleId) { return getRecords('entry').filter(r => r.schedule_id === scheduleId); }
+function getUserGroups(userId) { return allData.filter(r => r.type === 'group' && r.user_id === userId); }
+function getGroupMembers(groupId) { return allData.filter(r => r.type === 'group_member' && r.group_id === groupId); }
+function getUserPreferences(userId) { return allData.filter(r => r.type === 'user_preference' && r.user_id === userId); }
+function getHiddenUserIds(userId) { return getUserPreferences(userId).filter(r => r.preference_type === 'hidden').map(r => r.target_user_id); }
+function isUserHidden(currentUserId, targetUserId) { return getHiddenUserIds(currentUserId).includes(targetUserId); }
+
+// ===== SESSION =====
+function getSession() { const s = sessionStorage.getItem('uplanner_session'); return s ? JSON.parse(s) : null; }
+function setSession(userId, username) { sessionStorage.setItem('uplanner_session', JSON.stringify({ userId, username })); }
+function clearSession() { sessionStorage.removeItem('uplanner_session'); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ===== NAVIGATION =====
+const app = document.getElementById('app');
+const nav = document.getElementById('main-nav');
+const bottomNav = document.getElementById('bottom-nav');
+
+function showView(name, params) {
+  if (currentView !== name || JSON.stringify(currentParams) !== JSON.stringify(params)) { previousView = currentView; previousParams = currentParams; }
+  currentView = name; currentParams = params;
+  if (!sdkReady && !sdkError) return;
+  render(params);
+}
+function goBack(fallback, fallbackParams) { if (previousView && previousView !== 'landing') showView(previousView, previousParams); else showView(fallback || 'dashboard', fallbackParams); }
+
+function render(params) {
+  if (!sdkReady) return;
+  const session = getSession(); const loggedIn = !!session;
+  nav.classList.toggle('hidden', !loggedIn); bottomNav.classList.toggle('hidden', !loggedIn);
+  document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === currentView); });
+  const views = { landing, signup, login, 'profile-setup': profileSetup, dashboard, 'own-schedule': ownSchedule, search: searchView, 'view-schedule': viewSchedule, 'edit-schedule': editSchedule, compare: compareView, profile: profileView, 'view-profile': viewProfileView, groups: groupsView, 'group-detail': groupDetailView, 'how-to-use': howToUseView };
+  app.innerHTML = ''; const el = (views[currentView] || landing)(params);
+  if (typeof el === 'string') app.innerHTML = el; else if (el) app.appendChild(el);
+  lucide.createIcons();
+}
+
+document.addEventListener('click', e => { const nl = e.target.closest('[data-nav]'); if (nl) { const v = nl.dataset.nav; if (v === 'logout') { apiRequest('/api/auth',{method:'DELETE'}).finally(()=>{ clearSession(); showHiddenPeople = false; showView('landing'); }); } else showView(v); } });
+
+function toast(msg, type) { const t = document.createElement('div'); t.className = 'toast' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
+function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function esc(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const BLOCK_COLORS = ['#fbbf24', '#60a5fa', '#818cf8', '#a78bfa', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#10b981', '#06b6d4'];
+const PERSON_COLORS = BLOCK_COLORS;
+
+// ===== AUTH =====
+function landing() { const session = getSession(); if (session) { showView('dashboard'); return ''; } return `<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12"><div class="text-center max-w-2xl mx-auto"><div class="mb-8 inline-block"><div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg"><svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div></div><h1 data-template-id="landing-title" class="text-5xl sm:text-6xl font-bold mb-4">UPlanner</h1><p class="text-xl text-gray-300 mb-3 leading-relaxed">Find the time that works for everyone.</p><p class="text-lg text-gray-400 mb-10 leading-relaxed">Store your schedule, find friends, and instantly discover common free time to study or hang out.</p><div class="flex flex-col sm:flex-row justify-center gap-4 mb-12"><button class="btn-primary text-lg px-8 py-4 w-full sm:w-auto shadow-lg hover:shadow-xl" onclick="showView('signup')">Get Started</button><button class="btn-secondary text-lg px-8 py-4 w-full sm:w-auto" onclick="showView('login')">Log In</button></div><button class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition" onclick="showView('how-to-use')"><i data-lucide="help-circle" style="width:18px;height:18px"></i> Learn How It Works</button></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-16 max-w-3xl mx-auto"><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-3"><i data-lucide="calendar" style="width:24px;height:24px;color:var(--primary)"></i></div><h3 class="font-bold text-gray-100 mb-2">Your Schedule</h3><p class="text-sm text-gray-300">Add all your classes in one place and keep them up to date.</p></div><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center mb-3"><i data-lucide="search" style="width:24px;height:24px;color:var(--accent)"></i></div><h3 class="font-bold text-gray-100 mb-2">Find Friends</h3><p class="text-sm text-gray-300">Discover and view schedules from other students at your school.</p></div><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-3"><i data-lucide="git-compare" style="width:24px;height:24px;color:var(--success)"></i></div><h3 class="font-bold text-gray-100 mb-2">Find Free Time</h3><p class="text-sm text-gray-300">Compare schedules and see exactly when everyone is available.</p></div></div></div>`; }
+
+function signup() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="signup-heading" class="text-3xl font-bold">Create Account</h2><p class="mt-2 text-gray-300">Choose a nickname to get started.</p></div><div class="mt-8"><label class="form-label" for="su-input">Nickname</label><input id="su-input" class="input-field" placeholder="Enter your nickname"><p id="su-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="su-btn" class="btn-primary w-full mt-6" onclick="doSignup()">Create Account</button><p class="mt-6 text-center text-sm text-gray-400">Already have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('login')">Log In</a></p></div>`; }
+
+function login() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="login-heading" class="text-3xl font-bold">Welcome Back</h2><p class="mt-2 text-gray-300">Enter your nickname to access your schedules.</p></div><div class="mt-8"><label class="form-label" for="li-input">Nickname</label><input id="li-input" class="input-field" placeholder="Enter your nickname"><p id="li-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="li-btn" class="btn-primary w-full mt-6" onclick="doLogin()">Log In</button><p class="mt-6 text-center text-sm text-gray-400">Don't have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('signup')">Create one</a></p></div>`; }
+
+async function doSignup() {
+  const inp = document.getElementById('su-input'), err = document.getElementById('su-err'), btn = document.getElementById('su-btn');
+  const v = inp.value.trim(); err.classList.add('hidden');
+  if (!v) { err.textContent = 'Username cannot be empty.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating...';
+  try {
+    const result = await apiRequest('/api/auth', { method:'POST', body:JSON.stringify({ action:'signup', username:v }) });
+    setSession(result.user.id, result.user.username);
+    await refreshData();
+    showView('profile-setup');
+  } catch (e) {
+    err.textContent = e.message || 'Failed to create account.';
+    err.classList.remove('hidden');
+  } finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+}
+
+async function doLogin() {
+  const inp = document.getElementById('li-input'), err = document.getElementById('li-err'), btn = document.getElementById('li-btn');
+  const v = inp.value.trim(); err.classList.add('hidden');
+  if (!v) { err.textContent = 'Username cannot be empty.'; err.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const result = await apiRequest('/api/auth', { method:'POST', body:JSON.stringify({ action:'login', username:v }) });
+    setSession(result.user.id, result.user.username);
+    await refreshData();
+    showView('dashboard');
+  } catch (e) {
+    err.textContent = e.message || 'Username not found.';
+    err.classList.remove('hidden');
+  } finally { btn.disabled = false; btn.textContent = 'Log In'; }
+}
+
+// ===== PROFILE SETUP =====
+function profileSetup() { return `<div class="max-w-2xl mx-auto card p-6 sm:p-8"><h2 class="text-xl font-bold text-gray-50">Complete Your Profile</h2><p class="text-gray-300 text-sm mt-1">Fill in required fields to continue.</p><p id="ps-err" class="text-red-400 text-sm mt-2 hidden"></p><div class="mt-5 space-y-4"><div><label class="form-label">Full Name</label><input id="ps-name" class="input-field" placeholder="Your full name"></div><div><label class="form-label">Birthday <span style="color:var(--accent)">*</span></label><input id="ps-bday" type="date" class="input-field" oninput="updateProfileSetupBtn()"></div><div><label class="form-label">School <span style="color:var(--accent)">*</span></label><input id="ps-school" class="input-field" placeholder="e.g. UP Diliman" oninput="updateProfileSetupBtn()"></div><div><label class="form-label">Degree Program</label><input id="ps-degree" class="input-field" placeholder="e.g. BS Computer Science"></div><div><label class="form-label">Year Level</label><input id="ps-year" class="input-field" placeholder="e.g. 3rd Year"></div><div><label class="form-label">Section/Block</label><input id="ps-section" class="input-field" placeholder="e.g. Block A"></div><div><label class="form-label">Pronouns</label><input id="ps-pronouns" class="input-field" placeholder="e.g. she/her"></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="form-label">Profile Color</label><div class="grid grid-cols-6 gap-2 mt-1">${getColorOptions().map(c=>`<button type="button" class="w-10 h-10 rounded-lg border-2" style="background:${c};border-color:#4b4b4b" onclick="selectProfileColor('${c}',this)"></button>`).join('')}</div><p id="ps-color-label" class="text-xs text-gray-400 mt-1">Selected: Red</p></div><div><label class="form-label">Profile Emoji</label><div class="grid grid-cols-6 gap-1 mt-1">${getEmojiOptions().map(e=>`<button type="button" class="w-10 h-10 rounded-lg text-xl border-2 border-transparent hover:border-gray-600" onclick="selectProfileEmoji('${e}',this)">${e}</button>`).join('')}</div><p id="ps-emoji-label" class="text-xs text-gray-400 mt-1">Selected: 😊</p></div></div></div><div class="flex gap-3 mt-6"><button id="ps-continue-btn" class="btn-primary flex-1" onclick="saveProfileSetup()" disabled>Continue</button><button class="btn-secondary flex-1" onclick="showView('dashboard')">Skip for now</button></div></div>`; }
+
+function selectProfileColor(hex, el) { el.parentElement.querySelectorAll('button').forEach(e => e.style.borderColor = '#4b4b4b'); el.style.borderColor = '#fca5a5'; document.getElementById('ps-color-label').textContent = 'Selected: ' + getColorName(hex); sessionStorage.setItem('temp_color', hex); }
+function selectProfileEmoji(em, el) { el.parentElement.querySelectorAll('button').forEach(e => e.style.borderColor = 'transparent'); el.style.borderColor = '#fca5a5'; document.getElementById('ps-emoji-label').textContent = 'Selected: ' + em; sessionStorage.setItem('temp_emoji', em); }
+function updateProfileSetupBtn() { const bday = document.getElementById('ps-bday'); const school = document.getElementById('ps-school'); const btn = document.getElementById('ps-continue-btn'); if (btn) btn.disabled = !(bday && bday.value && school && school.value.trim()); }
+
+function getColorOptions() { return ['#fca5a5', '#f87171', '#fbbf24', '#fcd34d', '#a3e635', '#4ade80', '#22d3ee', '#06b6d4', '#0ea5e9', '#60a5fa', '#818cf8', '#a78bfa', '#d946ef', '#ec4899']; }
+function getEmojiOptions() { return ['😊', '🎓', '📚', '🚀', '⭐', '💻', '🎨', '🎭', '🎸', '⚡', '🌟', '🎯', '🎪', '🌈', '👨‍💻', '👩‍💻', '🧠', '📖', '✨', '🔥']; }
+function getColorName(hex) { const map = { '#fca5a5': 'Red', '#f87171': 'Red', '#fbbf24': 'Amber', '#fcd34d': 'Yellow', '#a3e635': 'Lime', '#4ade80': 'Green', '#22d3ee': 'Cyan', '#06b6d4': 'Sky', '#0ea5e9': 'Blue', '#60a5fa': 'Blue', '#818cf8': 'Indigo', '#a78bfa': 'Purple', '#d946ef': 'Fuchsia', '#ec4899': 'Pink' }; return map[hex] || 'Color'; }
+
+async function saveProfileSetup() {
+  const session = getSession(); if (!session) return; const user = findUserById(session.userId); if (!user) return;
+  const errEl = document.getElementById('ps-err'); const btn = document.getElementById('ps-continue-btn');
+  const bday = document.getElementById('ps-bday').value;
+  const school = document.getElementById('ps-school').value.trim();
+  errEl.classList.add('hidden');
+  if (!bday) { errEl.textContent = 'Birthday is required.'; errEl.classList.remove('hidden'); return; }
+  if (!school) { errEl.textContent = 'School is required.'; errEl.classList.remove('hidden'); return; }
+  const color = sessionStorage.getItem('temp_color') || '#fca5a5';
+  const emoji = sessionStorage.getItem('temp_emoji') || '😊';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+  const res = await updateRecord({ ...user, full_name: document.getElementById('ps-name').value.trim(), birthday: bday, school, degree_program: document.getElementById('ps-degree').value.trim(), year_level: document.getElementById('ps-year').value.trim(), section: document.getElementById('ps-section').value.trim(), pronouns: document.getElementById('ps-pronouns').value.trim(), profile_color: color, profile_emoji: emoji, updated_at: new Date().toISOString() });
+  btn.disabled = false; btn.textContent = 'Continue';
+  if (res.isOk) { sessionStorage.removeItem('temp_color'); sessionStorage.removeItem('temp_emoji'); toast('Profile saved!', 'success'); showView('dashboard'); }
+  else { errEl.textContent = 'Failed to save profile.'; errEl.classList.remove('hidden'); }
+}
+
+// ===== DASHBOARD =====
+function dashboard() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const user = findUserById(session.userId); const displayName = user && user.full_name ? user.full_name : session.username;
+  return `<div><h1 class="text-2xl font-bold text-gray-50">Welcome, ${escHtml(displayName)}!</h1><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">${dashCard('search', 'Search Schedules', 'Find and view saved schedules.', 'search')}${dashCard('own-schedule', 'My Schedule', 'Add or update your class schedule.', 'edit-3')}${dashCard('compare', 'Compare', 'Find free time between people.', 'git-compare')}${dashCard('groups', 'Groups & People', 'Organize people into groups.', 'users')}${dashCard('profile', 'My Profile', 'View and edit your profile.', 'user')}</div></div>`;
+}
+function dashCard(view, title, desc, icon) { return `<div class="card p-5 cursor-pointer hover:border-red-800 transition border border-transparent" onclick="showView('${view}')"><div class="flex items-center gap-3 mb-2"><i data-lucide="${icon}" style="width:22px;height:22px;color:var(--accent)"></i><h3 class="font-semibold text-gray-50">${title}</h3></div><p class="text-sm text-gray-300">${desc}</p></div>`; }
+
+// ===== HOW TO USE =====
+function howToUseView() {
+  const session = getSession(); const backBtn = session ? `<button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button>` : `<button class="btn-secondary" onclick="showView('landing')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button>`;
+  return `<div class="max-w-3xl mx-auto"><div class="flex items-center justify-between flex-wrap gap-2 mb-6"><h2 class="text-2xl font-bold text-gray-50">How to Use UPlanner</h2>${backBtn}</div><div class="space-y-4"><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">1. Create an Account</h3><p class="text-gray-300 text-sm">Pick a nickname, then fill in your birthday, school, and other info.</p></div><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">2. Add Your Schedule</h3><p class="text-gray-300 text-sm">Go to My Schedule and add all your classes with days and times.</p></div><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">3. Find People</h3><p class="text-gray-300 text-sm">Use Search to find anyone by name, school, or degree.</p></div><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">4. Hide People</h3><p class="text-gray-300 text-sm">Hide people from your directory view privately.</p></div><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">5. Create Groups</h3><p class="text-gray-300 text-sm">Organize friends into groups for quick access and comparison.</p></div><div class="card p-5"><h3 class="font-bold text-gray-50 mb-2">6. Compare Schedules</h3><p class="text-gray-300 text-sm">Select people and find common free time.</p></div></div></div>`;
+}
+
+// ===== PROFILE =====
+function profileView() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const user = findUserById(session.userId); if (!user) return '<p class="text-gray-300">Loading...</p>';
+  const div = document.createElement('div');
+  const color = user.profile_color || '#fca5a5'; const emoji = user.profile_emoji || '😊';
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2 mb-6"><h2 class="text-2xl font-bold text-gray-50">My Profile</h2><button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="card p-5 sm:p-6 max-w-lg"><div class="mb-5"><div class="flex items-center gap-3 mb-2"><span style="font-size:2.5rem;line-height:1">${emoji}</span><div><p class="font-bold text-gray-50 text-lg">${escHtml(user.username)}</p>${user.full_name ? `<p class="text-gray-300 text-sm">${escHtml(user.full_name)}</p>` : ''}</div></div></div><div id="pf-err" class="text-red-400 text-sm mb-4 hidden"></div><div class="space-y-4"><div><label class="form-label">Full Name</label><input id="pf-name" class="input-field" value="${esc(user.full_name || '')}" placeholder="Your full name"></div><div><label class="form-label">Birthday</label><input id="pf-bday" type="date" class="input-field" value="${esc(user.birthday || '')}"></div><div><label class="form-label">School</label><input id="pf-school" class="input-field" value="${esc(user.school || '')}" placeholder="e.g. UP Diliman"></div><div><label class="form-label">Degree Program</label><input id="pf-degree" class="input-field" value="${esc(user.degree_program || '')}" placeholder="e.g. BS Computer Science"></div><div><label class="form-label">Year Level</label><input id="pf-year" class="input-field" value="${esc(user.year_level || '')}" placeholder="e.g. 3rd Year"></div><div><label class="form-label">Section/Block</label><input id="pf-section" class="input-field" value="${esc(user.section || '')}" placeholder="e.g. Block A"></div><div><label class="form-label">Pronouns</label><input id="pf-pronouns" class="input-field" value="${esc(user.pronouns || '')}" placeholder="e.g. she/her"></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="form-label">Profile Color</label><div class="grid grid-cols-6 gap-2 mt-1">${getColorOptions().map(c => `<button type="button" class="w-8 h-8 rounded-lg border-2" style="background:${c};border-color:${c === color ? '#fca5a5' : '#4b4b4b'}" onclick="document.getElementById('pf-color').value='${c}';this.parentElement.querySelectorAll('button').forEach(b=>b.style.borderColor='#4b4b4b');this.style.borderColor='#fca5a5'"></button>`).join('')}</div><input id="pf-color" type="hidden" value="${color}"></div><div><label class="form-label">Profile Emoji</label><div class="grid grid-cols-6 gap-1 mt-1">${getEmojiOptions().map(e => `<button type="button" class="w-8 h-8 rounded-lg text-lg border-2" style="border-color:${e === emoji ? '#fca5a5' : 'transparent'}" onclick="document.getElementById('pf-emoji').value='${e}';this.parentElement.querySelectorAll('button').forEach(b=>b.style.borderColor='transparent');this.style.borderColor='#fca5a5'">${e}</button>`).join('')}</div><input id="pf-emoji" type="hidden" value="${emoji}"></div></div><button id="pf-save" class="btn-primary w-full" onclick="saveProfile()">Save Changes</button></div></div><div class="card p-5 sm:p-6 max-w-lg mt-6"><h3 class="font-bold text-gray-50 mb-4">Account Settings</h3><div><label class="form-label">Change Username</label><input id="pf-newuser" class="input-field" value="${esc(user.username)}" placeholder="New username"><p id="pf-user-err" class="text-red-400 text-sm mt-1 hidden"></p><button id="pf-user-btn" class="btn-secondary mt-2" onclick="changeUsername()">Update Username</button></div><div class="mt-8 pt-4 border-t border-red-900/50"><h4 class="font-bold text-red-400 mb-2">Danger Zone</h4><p class="text-sm text-gray-400 mb-3">Permanently delete your account and all your schedules.</p><button id="del-acct-btn" class="btn-danger" onclick="showDeleteConfirm()">Delete Account</button><div id="del-confirm" class="hidden mt-3 p-4 bg-red-950/40 border border-red-800 rounded-lg"><p class="text-sm text-gray-200 mb-3">Are you sure? This cannot be undone.</p><div class="flex gap-3"><button id="del-yes-btn" class="btn-danger" onclick="doDeleteAccount()">Yes, Delete</button><button class="btn-secondary" onclick="document.getElementById('del-confirm').classList.add('hidden')">Cancel</button></div></div></div></div>`;
+  return div;
+}
+
+async function saveProfile() {
+  const session = getSession(); if (!session) return; const user = findUserById(session.userId); if (!user) return;
+  const btn = document.getElementById('pf-save');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+  const res = await updateRecord({ ...user, full_name: document.getElementById('pf-name').value.trim(), birthday: document.getElementById('pf-bday').value, school: document.getElementById('pf-school').value.trim(), degree_program: document.getElementById('pf-degree').value.trim(), year_level: document.getElementById('pf-year').value.trim(), section: document.getElementById('pf-section').value.trim(), pronouns: document.getElementById('pf-pronouns').value.trim(), profile_color: document.getElementById('pf-color').value, profile_emoji: document.getElementById('pf-emoji').value, updated_at: new Date().toISOString() });
+  btn.disabled = false; btn.textContent = 'Save Changes';
+  if (res.isOk) toast('Profile saved!', 'success'); else toast('Failed to save.', 'error');
+}
+
+async function changeUsername() {
+  const session = getSession(); if (!session) return; const user = findUserById(session.userId); if (!user) return;
+  const inp = document.getElementById('pf-newuser'), err = document.getElementById('pf-user-err'), btn = document.getElementById('pf-user-btn');
+  const v = inp.value.trim(); err.classList.add('hidden');
+  if (!v) { err.textContent = 'Username cannot be empty.'; err.classList.remove('hidden'); return; }
+  const norm = v.toLowerCase();
+  if (norm !== user.username_normalized && findUserByNormalized(norm)) { err.textContent = 'That username is already taken.'; err.classList.remove('hidden'); return; }
+  if (norm === user.username_normalized && v === user.username) return;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const res = await updateRecord({ ...user, username: v, username_normalized: norm, updated_at: new Date().toISOString() });
+  if (!res.isOk) { btn.disabled = false; btn.textContent = 'Update Username'; err.textContent = 'Failed to update.'; err.classList.remove('hidden'); return; }
+  setSession(session.userId, v);
+  // Update schedule names
+  const userScheds = getUserSchedules(session.userId);
+  for (const sched of userScheds) { await updateRecord({ ...sched, name: v, updated_at: new Date().toISOString() }); }
+  btn.disabled = false; btn.textContent = 'Update Username';
+  toast('Username updated!', 'success'); showView('profile');
+}
+
+function showDeleteConfirm() { document.getElementById('del-confirm').classList.remove('hidden'); }
+async function doDeleteAccount() {
+  const session = getSession(); if (!session) return; const userId = session.userId;
+  const btn = document.getElementById('del-yes-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const userScheds = getUserSchedules(userId);
+  for (const s of userScheds) { const entries = getScheduleEntries(s.schedule_id); for (const e of entries) { const r = await deleteRecord(e); if (!r.isOk) { toast('Failed to delete data.', 'error'); btn.disabled = false; btn.textContent = 'Yes, Delete'; return; } } const r2 = await deleteRecord(s); if (!r2.isOk) { toast('Failed to delete schedule.', 'error'); btn.disabled = false; btn.textContent = 'Yes, Delete'; return; } }
+  const groups = getUserGroups(userId); for (const g of groups) { const members = getGroupMembers(g.group_id); for (const m of members) { await deleteRecord(m); } await deleteRecord(g); }
+  const prefs = getUserPreferences(userId); for (const p of prefs) { await deleteRecord(p); }
+  const user = findUserById(userId); if (user) { const r = await deleteRecord(user); if (!r.isOk) { toast('Failed to delete account.', 'error'); btn.disabled = false; btn.textContent = 'Yes, Delete'; return; } }
+  clearSession(); toast('Account deleted.'); showView('landing');
+}
+
+// ===== VIEW OTHER PROFILE =====
+function viewProfileView(p) {
+  if (!p || !p.userId) return '<p class="text-gray-300">User not found.</p>';
+  const user = findUserById(p.userId); if (!user) return '<p class="text-gray-300">User not found.</p>';
+  const div = document.createElement('div'); let fields = '';
+  const emoji = user.profile_emoji || '😊';
+  const add = (label, val) => { if (val) fields += `<div class="flex flex-col"><span class="text-xs text-gray-400 uppercase font-semibold">${label}</span><span class="text-gray-100">${escHtml(val)}</span></div>`; };
+  add('Full Name', user.full_name);
+  if (user.birthday) { const d = new Date(user.birthday + 'T00:00:00'); const mo = d.toLocaleString('en', { month: 'long' }); const dy = d.getDate(); const age = calcAge(user.birthday); fields += `<div class="flex flex-col"><span class="text-xs text-gray-400 uppercase font-semibold">Birthday</span><span class="text-gray-100">${mo} ${dy} (${age} y/o)</span></div>`; }
+  add('School', user.school); add('Degree Program', user.degree_program); add('Year Level', user.year_level); add('Section/Block', user.section); add('Pronouns', user.pronouns);
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2 mb-6"><h2 class="text-2xl font-bold text-gray-50">${escHtml(user.username)}'s Profile</h2><button class="btn-secondary" onclick="goBack('search')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="card p-5 max-w-lg"><div class="mb-4"><div class="flex items-center gap-3 mb-2"><span style="font-size:2rem;line-height:1">${emoji}</span><div><p class="font-bold text-gray-50 text-lg">${escHtml(user.username)}</p>${user.pronouns ? `<p class="text-gray-300 text-sm">${escHtml(user.pronouns)}</p>` : ''}</div></div></div>${fields ? `<div class="space-y-3">${fields}</div>` : '<p class="text-gray-400 text-sm">No profile info shared yet.</p>'}</div>`;
+  return div;
+}
+function calcAge(bday) { const b = new Date(bday + 'T00:00:00'); const now = new Date(); let age = now.getFullYear() - b.getFullYear(); const m = now.getMonth() - b.getMonth(); if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--; return age; }
+
+// ===== SCHEDULE EDITOR =====
+let editorRows = []; let editorScheduleId = ''; let editorPersonName = ''; let editorUserId = ''; let editorReturnView = null; let editorReturnParams = null;
+
+function ownSchedule() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  editorUserId = session.userId; editorPersonName = session.username;
+  editorReturnView = previousView; editorReturnParams = previousParams;
+  const scheds = getUserSchedules(session.userId);
+  const mySchedule = scheds.find(s => s.name === session.username) || scheds[0];
+  if (mySchedule) { editorScheduleId = mySchedule.schedule_id; editorRows = entriesToRows(getScheduleEntries(mySchedule.schedule_id)); }
+  else { editorScheduleId = genId(); editorRows = []; }
+  return buildEditor('My Schedule', 'Add all of your classes below.');
+}
+
+function entriesToRows(entries) { const map = {}; entries.forEach(e => { const key = `${e.subject}|${e.start_time}|${e.end_time}`; if (!map[key]) map[key] = { subject: e.subject, days: [], startTime: e.start_time, endTime: e.end_time }; if (e.day && !map[key].days.includes(e.day)) map[key].days.push(e.day); }); return Object.values(map); }
+
+function editSchedule(p) {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const s = allData.find(r => r.type === 'schedule' && r.schedule_id === p.scheduleId); if (!s) { showView('search'); return ''; }
+  if (s.user_id !== session.userId) { toast('You can only edit your own schedule.', 'error'); showView('search'); return ''; }
+  editorScheduleId = s.schedule_id; editorUserId = s.user_id; editorPersonName = s.name;
+  editorReturnView = previousView; editorReturnParams = previousParams;
+  editorRows = entriesToRows(getScheduleEntries(s.schedule_id));
+  return buildEditor('Edit Schedule', 'Make changes below.');
+}
+
+function buildEditor(title, desc) {
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2"><div><h2 class="text-xl sm:text-2xl font-bold text-gray-50">${escHtml(title)}</h2><p class="text-gray-300 text-sm mt-1">${escHtml(desc)}</p></div><button class="btn-secondary" onclick="goBack('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div id="editor-err" class="text-red-400 text-sm mt-3 hidden"></div><div id="editor-container" class="mt-4"></div><div class="mt-4 flex gap-3 flex-wrap"><button class="btn-secondary" onclick="addRow()"><i data-lucide="plus" style="width:14px;height:14px"></i> Add Subject</button><button id="save-btn" class="btn-primary" onclick="saveSchedule()">Save Schedule</button></div>`;
+  setTimeout(() => renderRows(), 0); return div;
+}
+
+function renderRows() {
+  const container = document.getElementById('editor-container'); if (!container) return;
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    container.innerHTML = editorRows.length === 0 ? '<p class="text-gray-400 text-sm">No subjects yet. Tap "Add Subject" to begin.</p>' : editorRows.map((r, i) => `<div class="mobile-card mb-3"><div class="flex items-center justify-between mb-3"><span class="font-semibold text-gray-100 text-sm">Subject ${i + 1}</span><button class="text-red-400" onclick="deleteRow(${i})"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button></div><div class="space-y-3"><div><label class="form-label">Subject Name</label><input class="input-field" value="${esc(r.subject)}" onchange="editorRows[${i}].subject=this.value" placeholder="Subject name"></div><div><label class="form-label">Days</label><div class="flex flex-wrap gap-2 mt-1">${DAYS.map(d => `<label class="inline-flex items-center gap-1 text-sm text-gray-200"><input type="checkbox" ${r.days.includes(d) ? 'checked' : ''} onchange="toggleDay(${i},'${d}',this.checked)" class="w-4 h-4">${d.slice(0, 3)}</label>`).join('')}</div></div><div class="grid grid-cols-2 gap-3"><div><label class="form-label">Start</label><input type="time" class="input-field" value="${r.startTime}" onchange="editorRows[${i}].startTime=this.value"></div><div><label class="form-label">End</label><input type="time" class="input-field" value="${r.endTime}" onchange="editorRows[${i}].endTime=this.value"></div></div></div></div>`).join('');
+  } else {
+    container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Subject</th><th>Days</th><th>Start</th><th>End</th><th></th></tr></thead><tbody>${editorRows.map((r, i) => `<tr><td><input class="input-field" value="${esc(r.subject)}" onchange="editorRows[${i}].subject=this.value" style="min-width:100px"></td><td><div class="flex flex-wrap gap-1">${DAYS.map(d => `<label class="inline-flex items-center gap-0.5 text-xs text-gray-200"><input type="checkbox" ${r.days.includes(d) ? 'checked' : ''} onchange="toggleDay(${i},'${d}',this.checked)">${d.slice(0, 3)}</label>`).join('')}</div></td><td><input type="time" class="input-field" value="${r.startTime}" onchange="editorRows[${i}].startTime=this.value" style="width:120px"></td><td><input type="time" class="input-field" value="${r.endTime}" onchange="editorRows[${i}].endTime=this.value" style="width:120px"></td><td><button class="text-red-400" onclick="deleteRow(${i})"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  lucide.createIcons();
+}
+
+function toggleDay(i, day, checked) { if (checked) { if (!editorRows[i].days.includes(day)) editorRows[i].days.push(day); } else { editorRows[i].days = editorRows[i].days.filter(d => d !== day); } }
+function addRow() { editorRows.push({ subject: '', days: [], startTime: '08:00', endTime: '09:00' }); renderRows(); }
+function deleteRow(i) { editorRows.splice(i, 1); renderRows(); }
+
+async function saveSchedule() {
+  const errEl = document.getElementById('editor-err'); errEl.classList.add('hidden');
+  // Validate
+  for (let i = 0; i < editorRows.length; i++) { const r = editorRows[i]; if (!r.subject.trim()) { errEl.textContent = `Row ${i + 1}: Subject required.`; errEl.classList.remove('hidden'); return; } if (!r.days.length) { errEl.textContent = `Row ${i + 1}: Select a day.`; errEl.classList.remove('hidden'); return; } if (!r.startTime || !r.endTime) { errEl.textContent = `Row ${i + 1}: Times required.`; errEl.classList.remove('hidden'); return; } if (r.startTime >= r.endTime) { errEl.textContent = `Row ${i + 1}: End must be after start.`; errEl.classList.remove('hidden'); return; } }
+  const btn = document.getElementById('save-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+  // Build desired entries
+  const desiredEntries = [];
+  for (const row of editorRows) { for (const d of row.days) { desiredEntries.push({ subject: row.subject, day: d, start_time: row.startTime, end_time: row.endTime }); } }
+
+  // Ensure schedule record exists
+  const existingSched = allData.find(r => r.type === 'schedule' && r.schedule_id === editorScheduleId);
+  if (!existingSched) {
+    const r = await createRecord(createScheduleRecord(editorUserId, editorScheduleId, editorPersonName));
+    if (!r.isOk) { btn.disabled = false; btn.textContent = 'Save Schedule'; errEl.textContent = 'Unable to save.'; errEl.classList.remove('hidden'); return; }
+  } else {
+    await updateRecord({ ...existingSched, name: editorPersonName, updated_at: new Date().toISOString() });
+  }
+
+  // Get current entries and diff
+  const currentEntries = allData.filter(r => r.type === 'entry' && r.schedule_id === editorScheduleId);
+  const currentKeys = new Map(); currentEntries.forEach(e => { currentKeys.set(`${e.subject}|${e.day}|${e.start_time}|${e.end_time}`, e); });
+  const desiredKeys = new Set(); desiredEntries.forEach(e => { desiredKeys.add(`${e.subject}|${e.day}|${e.start_time}|${e.end_time}`); });
+
+  // Delete entries no longer needed
+  for (const [key, record] of currentKeys) {
+    if (!desiredKeys.has(key)) { const r = await deleteRecord(record); if (!r.isOk) { btn.disabled = false; btn.textContent = 'Save Schedule'; errEl.textContent = 'Failed to delete old entries.'; errEl.classList.remove('hidden'); return; } }
+  }
+  // Create new entries
+  for (const e of desiredEntries) {
+    const key = `${e.subject}|${e.day}|${e.start_time}|${e.end_time}`;
+    if (!currentKeys.has(key)) { const r = await createRecord(createEntryRecord(editorUserId, editorScheduleId, e.subject, e.day, e.start_time, e.end_time)); if (!r.isOk) { btn.disabled = false; btn.textContent = 'Save Schedule'; errEl.textContent = 'Failed to save some entries.'; errEl.classList.remove('hidden'); return; } }
+  }
+
+  btn.disabled = false; btn.textContent = 'Save Schedule'; toast('Schedule saved!', 'success');
+  if (editorReturnView && editorReturnView !== 'landing') showView(editorReturnView, editorReturnParams); else showView('dashboard');
+}
+
+// ===== SEARCH / DIRECTORY =====
+let searchSort = 'username'; let searchSortDir = 1; let searchFilter = 'all'; let searchCompactMode = false;
+
+function searchView() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const div = document.createElement('div');
+  const myGroups = getUserGroups(session.userId);
+  const filterOpts = `<option value="all">All People</option>${myGroups.map(g => `<option value="${esc(g.group_id)}">${escHtml(g.name)}</option>`).join('')}`;
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2"><div><h2 class="text-xl sm:text-2xl font-bold text-gray-50">Schedule Directory</h2><p class="text-gray-300 text-sm mt-1">Find and view saved schedules.</p></div><button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="mt-4 flex gap-2 flex-wrap items-center"><input id="search-input" class="input-field flex-1" style="min-width:150px" placeholder="Search by name, school, degree..." oninput="filterSearch()"><select id="search-filter" class="input-field" style="width:auto;min-width:120px" onchange="searchFilter=this.value;filterSearch()">${filterOpts}</select><button class="btn-secondary" onclick="toggleCompactMode()"><i data-lucide="list" style="width:14px;height:14px"></i></button></div><div class="mt-2"><label class="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" ${showHiddenPeople ? 'checked' : ''} onchange="showHiddenPeople=this.checked;filterSearch()" class="w-4 h-4"> Show hidden people</label></div><div id="search-results" class="mt-4"></div>`;
+  setTimeout(() => { const sel = document.getElementById('search-filter'); if (sel) sel.value = searchFilter; filterSearch(); }, 0); return div;
+}
+
+function toggleCompactMode() { searchCompactMode = !searchCompactMode; filterSearch(); }
+
+function filterSearch() {
+  const session = getSession(); if (!session) return;
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const container = document.getElementById('search-results'); if (!container) return;
+  const hiddenIds = getHiddenUserIds(session.userId);
+  let users = getRecords('user');
+  if (!showHiddenPeople) { users = users.filter(u => !hiddenIds.includes(u.user_id)); }
+  if (searchFilter && searchFilter !== 'all') { const memberIds = getGroupMembers(searchFilter).map(m => m.target_user_id); users = users.filter(u => memberIds.includes(u.user_id)); }
+  if (q) { users = users.filter(u => { const hay = [u.username, u.full_name, u.school, u.degree_program, u.section, u.username_normalized].join(' ').toLowerCase(); return hay.includes(q); }); }
+  if (!users.length) { container.innerHTML = '<p class="text-gray-300">No results found.</p>'; return; }
+  const isMobile = window.innerWidth < 768;
+  if (searchCompactMode || isMobile) { renderSearchCardsCompact(users, session, hiddenIds, container); }
+  else { renderSearchTable(users, session, hiddenIds, container); }
+  lucide.createIcons();
+}
+
+function renderSearchTable(users, session, hiddenIds, container) {
+  users.sort((a, b) => { let av, bv; if (searchSort === 'username') { av = (a.username || '').toLowerCase(); bv = (b.username || '').toLowerCase(); } else if (searchSort === 'name') { av = (a.full_name || '').toLowerCase(); bv = (b.full_name || '').toLowerCase(); } else if (searchSort === 'school') { av = (a.school || '').toLowerCase(); bv = (b.school || '').toLowerCase(); } else if (searchSort === 'degree') { av = (a.degree_program || '').toLowerCase(); bv = (b.degree_program || '').toLowerCase(); } else if (searchSort === 'birthday') { av = (a.birthday || ''); bv = (b.birthday || ''); } else { av = ''; bv = ''; } if (av < bv) return -1 * searchSortDir; if (av > bv) return 1 * searchSortDir; return 0; });
+  const th = (key, label) => `<th class="cursor-pointer select-none" onclick="setSearchSort('${key}')">${label}${searchSort === key ? (searchSortDir === 1 ? ' ↑' : ' ↓') : ''}</th>`;
+  container.innerHTML = `<div class="table-wrap"><table><thead><tr>${th('username', 'Username')}${th('name', 'Full Name')}${th('school', 'School')}${th('degree', 'Degree')}${th('birthday', 'Birthday & Age')}<th>Actions</th></tr></thead><tbody>${users.map(u => {
+    const isMe = u.user_id === session.userId; const hidden = hiddenIds.includes(u.user_id);
+    const sched = getRecords('schedule').find(s => s.user_id === u.user_id);
+    const emoji = u.profile_emoji || '😊'; const color = u.profile_color || '#fca5a5';
+    let actions = '';
+    if (sched) actions += `<button class="btn-secondary text-xs" onclick="showView('view-schedule',{scheduleId:'${sched.schedule_id}'})">View</button> `;
+    if (isMe && sched) actions += `<button class="btn-secondary text-xs" onclick="showView('edit-schedule',{scheduleId:'${sched.schedule_id}'})">Edit</button> `;
+    if (!isMe) { actions += `<button class="btn-secondary text-xs" onclick="showView('view-profile',{userId:'${u.user_id}'})">Profile</button> `; actions += `<button class="btn-secondary text-xs" onclick="addToCompareFromDir('${u.user_id}')">Compare</button> `; actions += `<button class="btn-secondary text-xs" onclick="toggleHide('${u.user_id}')">${hidden ? 'Unhide' : 'Hide'}</button>`; }
+    let bdayStr = ''; if (u.birthday) { const d = new Date(u.birthday + 'T00:00:00'); const mo = d.toLocaleString('en', { month: 'short' }); const dy = d.getDate(); const age = calcAge(u.birthday); bdayStr = `${mo} ${dy} (${age})`; }
+    return `<tr><td class="font-medium text-gray-100"><span style="color:${color};font-size:1.1rem;margin-right:6px">${emoji}</span>${escHtml(u.username)}${hidden ? ' <span class="badge-hidden">Hidden</span>' : ''}</td><td>${escHtml(u.full_name || '')}</td><td>${escHtml(u.school || '')}</td><td>${escHtml(u.degree_program || '')}</td><td>${bdayStr}</td><td><div class="flex gap-1 flex-wrap">${actions}</div></td></tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+function renderSearchCardsCompact(users, session, hiddenIds, container) {
+  users.sort((a, b) => { let av, bv; if (searchSort === 'username') { av = (a.username || '').toLowerCase(); bv = (b.username || '').toLowerCase(); } else if (searchSort === 'name') { av = (a.full_name || '').toLowerCase(); bv = (b.full_name || '').toLowerCase(); } else if (searchSort === 'school') { av = (a.school || '').toLowerCase(); bv = (b.school || '').toLowerCase(); } else if (searchSort === 'degree') { av = (a.degree_program || '').toLowerCase(); bv = (b.degree_program || '').toLowerCase(); } else if (searchSort === 'birthday') { av = (a.birthday || ''); bv = (b.birthday || ''); } else { av = ''; bv = ''; } if (av < bv) return -1 * searchSortDir; if (av > bv) return 1 * searchSortDir; return 0; });
+  container.innerHTML = `<div class="space-y-1"><div class="card p-2 flex items-center justify-between gap-2"><span class="text-xs font-semibold text-gray-400 uppercase">Sort by</span><div class="flex gap-1">${['username', 'name', 'school', 'degree', 'birthday'].map(k => `<button class="text-xs px-1.5 py-0.5 rounded transition" style="background:${searchSort === k ? 'var(--accent)' : '#2a2a2a'};color:${searchSort === k ? '#fff' : '#d1d5db'}" onclick="setSearchSort('${k}')">${k === 'birthday' ? 'Age' : k === 'name' ? 'Name' : k.charAt(0).toUpperCase() + k.slice(1)}</button>`).join('')}</div></div>${users.map(u => {
+    const isMe = u.user_id === session.userId; const hidden = hiddenIds.includes(u.user_id);
+    const sched = getRecords('schedule').find(s => s.user_id === u.user_id);
+    let actions = '';
+    if (sched) actions += `<button class="btn-secondary text-xs px-2 py-1" onclick="showView('view-schedule',{scheduleId:'${sched.schedule_id}'})">View</button>`;
+    if (!isMe) { actions += `<button class="btn-secondary text-xs px-2 py-1" onclick="showView('view-profile',{userId:'${u.user_id}'})">Profile</button>`; actions += `<button class="btn-secondary text-xs px-2 py-1" onclick="addToCompareFromDir('${u.user_id}')">Add</button>`; actions += `<button class="btn-secondary text-xs px-2 py-1" onclick="toggleHide('${u.user_id}')">${hidden ? 'Show' : 'Hide'}</button>`; }
+    const emoji = u.profile_emoji || '😊';
+    let metaStr = ''; let parts = []; if (u.school) parts.push(u.school.slice(0, 10)); if (u.degree_program) parts.push(u.degree_program.slice(0, 10)); if (parts.length) metaStr = ` · ${parts.join(' · ')}`;
+    return `<div class="card p-2"><div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1.5 flex-wrap min-w-0"><span style="font-size:1rem;line-height:1">${emoji}</span><span class="font-semibold text-gray-50 text-sm truncate">${escHtml(u.username)}</span>${hidden ? '<span class="badge-hidden text-xs">H</span>' : ''}<span class="text-xs text-gray-400 truncate">${metaStr}</span></div><div class="flex gap-0.5">${actions}</div></div></div>`;
+  }).join('')}</div>`;
+}
+
+function setSearchSort(key) { if (searchSort === key) searchSortDir *= -1; else { searchSort = key; searchSortDir = 1; } filterSearch(); }
+
+async function toggleHide(targetUserId) {
+  const session = getSession(); if (!session) return;
+  const existing = allData.find(r => r.type === 'user_preference' && r.user_id === session.userId && r.target_user_id === targetUserId && r.preference_type === 'hidden');
+  if (existing) { const r = await deleteRecord(existing); if (r.isOk) toast('Person unhidden.'); else toast('Failed.', 'error'); }
+  else { const r = await createRecord(createUserPreferenceRecord(session.userId, targetUserId, 'hidden')); if (r.isOk) toast('Person hidden.'); else toast('Failed.', 'error'); }
+}
+
+function addToCompareFromDir(userId) {
+  const sched = getRecords('schedule').find(s => s.user_id === userId);
+  if (!sched) { toast('This person has no schedule.'); return; }
+  if (!compareSelected.includes(sched.schedule_id)) { compareSelected.push(sched.schedule_id); }
+  showView('compare', { fromDir: true });
+}
+
+function confirmDelete(scheduleId) {
+  const s = allData.find(r => r.type === 'schedule' && r.schedule_id === scheduleId); if (!s) return;
+  const session = getSession(); if (!session || s.user_id !== session.userId) { toast('Cannot delete.', 'error'); return; }
+  app.innerHTML = `<div class="max-w-md mx-auto card p-6 sm:p-8"><p class="text-gray-100">Delete <strong>${escHtml(s.name)}'s</strong> schedule?</p><div class="flex gap-3 mt-6"><button id="del-btn" class="btn-danger" onclick="doDelete('${scheduleId}')">Delete</button><button class="btn-secondary" onclick="showView('search')">Cancel</button></div></div>`;
+}
+
+async function doDelete(scheduleId) {
+  const session = getSession(); if (!session) return;
+  const sched = allData.find(r => r.type === 'schedule' && r.schedule_id === scheduleId);
+  if (!sched || sched.user_id !== session.userId) { toast('Cannot delete.', 'error'); return; }
+  const btn = document.getElementById('del-btn'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+  const entries = allData.filter(r => r.type === 'entry' && r.schedule_id === scheduleId);
+  for (const e of entries) { const r = await deleteRecord(e); if (!r.isOk) { toast('Failed to delete entries.', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Delete'; } return; } }
+  const r2 = await deleteRecord(sched);
+  if (r2.isOk) { toast('Schedule deleted.'); showView('search'); }
+  else { toast('Failed to delete schedule.', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Delete'; } }
+}
+
+function viewSchedule(p) {
+  const s = allData.find(r => r.type === 'schedule' && r.schedule_id === p.scheduleId);
+  if (!s) { showView('search'); return ''; }
+  const entries = getScheduleEntries(p.scheduleId); const rows = entriesToRows(entries);
+  const div = document.createElement('div'); const session = getSession(); const canEdit = s.user_id === session?.userId;
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2"><h2 class="text-xl sm:text-2xl font-bold text-gray-50">${escHtml(s.name)}'s Schedule</h2><div class="flex gap-2 flex-wrap">${canEdit ? `<button class="btn-primary text-sm" onclick="showView('edit-schedule',{scheduleId:'${p.scheduleId}'})">Edit</button>` : ''}<button class="btn-secondary text-sm" onclick="goBack('search')">Back</button></div></div><div class="mt-4" id="tt-container"></div>`;
+  setTimeout(() => { const c = document.getElementById('tt-container'); if (c) c.appendChild(buildTimetableGrid(rows)); }, 0); return div;
+}
+
+// ===== GROUPS =====
+function groupsView() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const div = document.createElement('div');
+  const groups = getUserGroups(session.userId);
+  const hiddenIds = getHiddenUserIds(session.userId);
+  const hiddenUsers = hiddenIds.map(id => findUserById(id)).filter(Boolean);
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2 mb-6"><div><h2 class="text-xl sm:text-2xl font-bold text-gray-50">Groups & People</h2><p class="text-gray-300 text-sm mt-1">Organize the people you want to find quickly.</p></div><button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="mb-6"><h3 class="font-bold text-gray-100 mb-3">My Groups</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="groups-list">${groups.length ? groups.map(g => { const mc = getGroupMembers(g.group_id).length; return `<div class="card p-4"><div class="flex items-center justify-between mb-2"><span class="font-semibold text-gray-50">${escHtml(g.name)}</span><span class="text-xs text-gray-400">${mc} member${mc !== 1 ? 's' : ''}</span></div><div class="flex gap-2 flex-wrap"><button class="btn-secondary text-xs" onclick="showView('group-detail',{groupId:'${g.group_id}'})">View</button><button class="btn-secondary text-xs" onclick="renameGroup('${g.group_id}')">Rename</button><button class="btn-danger text-xs" onclick="confirmDeleteGroup('${g.group_id}')">Delete</button></div></div>`; }).join('') : '<p class="text-gray-400 text-sm">No groups yet.</p>'}</div><div class="mt-4 flex gap-2 flex-wrap items-end"><div class="flex-1" style="min-width:150px"><label class="form-label">New Group Name</label><input id="new-group-name" class="input-field" placeholder="e.g. Study Buddies"></div><button id="create-group-btn" class="btn-primary" onclick="createGroup()">Create Group</button></div><p id="group-err" class="text-red-400 text-sm mt-1 hidden"></p></div><div class="mt-8"><h3 class="font-bold text-gray-100 mb-3">Hidden People (${hiddenUsers.length})</h3>${hiddenUsers.length ? `<div class="space-y-2">${hiddenUsers.map(u => `<div class="card p-3 flex items-center justify-between flex-wrap gap-2"><div><span class="font-medium text-gray-100">${escHtml(u.username)}</span>${u.full_name ? ` <span class="text-sm text-gray-400">— ${escHtml(u.full_name)}</span>` : ''}</div><button class="btn-secondary text-xs" onclick="toggleHide('${u.user_id}')">Unhide</button></div>`).join('')}</div>` : '<p class="text-gray-400 text-sm">No hidden people.</p>'}</div>`;
+  return div;
+}
+
+async function createGroup() {
+  const session = getSession(); if (!session) return;
+  const inp = document.getElementById('new-group-name'); const errEl = document.getElementById('group-err'); const btn = document.getElementById('create-group-btn');
+  const name = inp.value.trim(); errEl.classList.add('hidden');
+  if (!name) { errEl.textContent = 'Group name cannot be empty.'; errEl.classList.remove('hidden'); return; }
+  const existing = getUserGroups(session.userId);
+  if (existing.some(g => g.name.toLowerCase() === name.toLowerCase())) { errEl.textContent = 'You already have a group with that name.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const groupId = genId();
+  const res = await createRecord(createGroupRecord(session.userId, groupId, name));
+  btn.disabled = false; btn.textContent = 'Create Group';
+  if (res.isOk) { inp.value = ''; toast('Group created!', 'success'); } else { errEl.textContent = 'Failed to create group.'; errEl.classList.remove('hidden'); }
+}
+
+function renameGroup(groupId) {
+  const group = allData.find(r => r.type === 'group' && r.group_id === groupId); if (!group) return;
+  app.innerHTML = `<div class="max-w-md mx-auto card p-6"><h3 class="font-bold text-gray-50 mb-3">Rename Group</h3><input id="rename-input" class="input-field" value="${esc(group.name)}"><p id="rename-err" class="text-red-400 text-sm mt-1 hidden"></p><div class="flex gap-3 mt-4"><button id="rename-btn" class="btn-primary" onclick="doRenameGroup('${groupId}')">Save</button><button class="btn-secondary" onclick="showView('groups')">Cancel</button></div></div>`;
+}
+
+async function doRenameGroup(groupId) {
+  const session = getSession(); if (!session) return;
+  const inp = document.getElementById('rename-input'); const errEl = document.getElementById('rename-err'); const btn = document.getElementById('rename-btn');
+  const name = inp.value.trim(); errEl.classList.add('hidden');
+  if (!name) { errEl.textContent = 'Name cannot be empty.'; errEl.classList.remove('hidden'); return; }
+  const existing = getUserGroups(session.userId);
+  if (existing.some(g => g.group_id !== groupId && g.name.toLowerCase() === name.toLowerCase())) { errEl.textContent = 'Duplicate name.'; errEl.classList.remove('hidden'); return; }
+  const group = allData.find(r => r.type === 'group' && r.group_id === groupId); if (!group) return;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const res = await updateRecord({ ...group, name, updated_at: new Date().toISOString() });
+  btn.disabled = false; btn.textContent = 'Save';
+  if (res.isOk) { toast('Group renamed!', 'success'); showView('groups'); } else { errEl.textContent = 'Failed to rename.'; errEl.classList.remove('hidden'); }
+}
+
+function confirmDeleteGroup(groupId) {
+  const group = allData.find(r => r.type === 'group' && r.group_id === groupId); if (!group) return;
+  app.innerHTML = `<div class="max-w-md mx-auto card p-6"><p class="text-gray-100">Delete group <strong>${escHtml(group.name)}</strong>?</p><div class="flex gap-3 mt-4"><button id="del-group-btn" class="btn-danger" onclick="doDeleteGroup('${groupId}')">Delete</button><button class="btn-secondary" onclick="showView('groups')">Cancel</button></div></div>`;
+}
+
+async function doDeleteGroup(groupId) {
+  const btn = document.getElementById('del-group-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const members = getGroupMembers(groupId); for (const m of members) { const r = await deleteRecord(m); if (!r.isOk) { toast('Failed.', 'error'); btn.disabled = false; btn.textContent = 'Delete'; return; } }
+  const group = allData.find(r => r.type === 'group' && r.group_id === groupId);
+  if (group) { const r = await deleteRecord(group); if (!r.isOk) { toast('Failed.', 'error'); btn.disabled = false; btn.textContent = 'Delete'; return; } }
+  toast('Group deleted.'); showView('groups');
+}
+
+function groupDetailView(p) {
+  if (!p || !p.groupId) return '';
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const group = allData.find(r => r.type === 'group' && r.group_id === p.groupId); if (!group) { showView('groups'); return ''; }
+  const members = getGroupMembers(p.groupId);
+  const memberUsers = members.map(m => findUserById(m.target_user_id)).filter(Boolean);
+  const hiddenIds = getHiddenUserIds(session.userId);
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="flex items-center justify-between flex-wrap gap-2 mb-4"><h2 class="text-xl font-bold text-gray-50">${escHtml(group.name)}</h2><button class="btn-secondary" onclick="showView('groups')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div><div class="mb-4"><h3 class="font-semibold text-gray-200 text-sm mb-2">Members (${memberUsers.length})</h3><div class="space-y-2" id="group-members">${memberUsers.length ? memberUsers.map(u => { const hidden = hiddenIds.includes(u.user_id); const emoji = u.profile_emoji || '😊'; return `<div class="card p-3 flex items-center justify-between flex-wrap gap-2"><div class="flex items-center gap-2"><span style="font-size:1.25rem">${emoji}</span><div><span class="font-medium text-gray-100">${escHtml(u.username)}</span>${u.full_name ? ` <span class="text-sm text-gray-400">— ${escHtml(u.full_name)}</span>` : ''} ${hidden ? '<span class="badge-hidden">Hidden</span>' : ''}</div></div><button class="btn-danger text-xs" onclick="removeFromGroup('${p.groupId}','${u.user_id}')">Remove</button></div>`; }).join('') : '<p class="text-gray-400 text-sm">No members yet.</p>'}</div></div><div class="card p-4"><h4 class="font-semibold text-gray-200 text-sm mb-2">Add People</h4><input id="group-add-search" class="input-field mb-2" placeholder="Search people..." oninput="renderGroupAddList('${p.groupId}')"><div id="group-add-list" class="max-h-48 overflow-y-auto space-y-1"></div></div>`;
+  setTimeout(() => renderGroupAddList(p.groupId), 0); return div;
+}
+
+function renderGroupAddList(groupId) {
+  const session = getSession(); if (!session) return;
+  const q = (document.getElementById('group-add-search')?.value || '').toLowerCase();
+  const existingMemberIds = new Set(getGroupMembers(groupId).map(m => m.target_user_id));
+  const hiddenIds = getHiddenUserIds(session.userId);
+  let users = getRecords('user').filter(u => !existingMemberIds.has(u.user_id));
+  if (!showHiddenPeople) { users = users.filter(u => !hiddenIds.includes(u.user_id)); }
+  if (q) { users = users.filter(u => [u.username, u.full_name, u.school, u.degree_program].join(' ').toLowerCase().includes(q)); }
+  const container = document.getElementById('group-add-list'); if (!container) return;
+  container.innerHTML = users.slice(0, 20).map(u => `<div class="flex items-center justify-between p-2 rounded hover:bg-gray-800"><div class="flex items-center gap-1.5 min-w-0"><span>${u.profile_emoji || '😊'}</span><span class="text-sm text-gray-200 truncate">${escHtml(u.username)}</span></div><button class="btn-secondary text-xs" onclick="addToGroup('${groupId}','${u.user_id}')">Add</button></div>`).join('') || '<p class="text-gray-400 text-xs">No results.</p>';
+}
+
+async function addToGroup(groupId, targetUserId) {
+  const session = getSession(); if (!session) return;
+  const res = await createRecord(createGroupMemberRecord(session.userId, groupId, targetUserId));
+  if (res.isOk) toast('Added to group!', 'success'); else toast('Failed to add.', 'error');
+}
+
+async function removeFromGroup(groupId, targetUserId) {
+  const member = allData.find(r => r.type === 'group_member' && r.group_id === groupId && r.target_user_id === targetUserId);
+  if (member) { const r = await deleteRecord(member); if (r.isOk) toast('Removed from group.'); else toast('Failed.', 'error'); }
+}
+
+// ===== TIMETABLE =====
+const GRID_HEIGHT = 600;
+function getActiveDays(entries) { const daysUsed = new Set(); entries.forEach(e => { if (e.day) daysUsed.add(e.day); if (e.days) e.days.forEach(d => daysUsed.add(d)); }); const hasWeekend = daysUsed.has('Saturday') || daysUsed.has('Sunday'); return hasWeekend ? DAYS : DAYS.slice(0, 5); }
+function timeToMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function getScheduleTimeRange(entries) { if (!entries.length) return { start: 480, end: 1020 }; let earliest = 1440, latest = 0; entries.forEach(e => { const st = e.startTime || e.start_time, en = e.endTime || e.end_time; if (!st || !en) return; const s = timeToMin(st), end = timeToMin(en); if (s < earliest) earliest = s; if (end > latest) latest = end; }); earliest = Math.max(0, Math.floor(earliest / 30) * 30 - 30); latest = Math.min(1440, Math.ceil(latest / 30) * 30 + 30); return { start: earliest, end: latest }; }
+
+function buildTimetableGrid(rows) {
+  const entries = []; rows.forEach(r => { r.days.forEach(d => { entries.push({ subject: r.subject, day: d, startTime: r.startTime, endTime: r.endTime }); }); });
+  const activeDays = getActiveDays(entries); const numDays = activeDays.length;
+  const range = getScheduleTimeRange(entries); const rangeSpan = range.end - range.start; const pxPerMin = GRID_HEIGHT / rangeSpan;
+  const wrapper = document.createElement('div'); wrapper.className = 'timetable-scroll';
+  const grid = document.createElement('div'); grid.className = 'timetable-grid';
+  grid.style.gridTemplateColumns = `52px repeat(${numDays},minmax(${numDays > 5 ? '70px' : '90px'},1fr))`;
+  grid.style.gridTemplateRows = `auto ${GRID_HEIGHT}px`;
+  ['Time', ...activeDays.map(d => d.slice(0, 3))].forEach(h => { const el = document.createElement('div'); el.className = 'tt-header'; el.textContent = h; grid.appendChild(el); });
+  const timeCol = document.createElement('div'); timeCol.className = 'tt-time-col'; timeCol.style.position = 'relative';
+  for (let m = range.start; m <= range.end; m += 60) { const lbl = document.createElement('div'); lbl.className = 'tt-time-label'; lbl.style.top = ((m - range.start) * pxPerMin) + 'px'; const h = Math.floor(m / 60); lbl.textContent = `${h % 12 || 12}${h >= 12 ? 'p' : 'a'}`; timeCol.appendChild(lbl); }
+  grid.appendChild(timeCol);
+  activeDays.forEach(day => {
+    const col = document.createElement('div'); col.className = 'timetable-day'; col.style.position = 'relative';
+    for (let m = range.start; m <= range.end; m += 30) { const line = document.createElement('div'); line.className = 'guide-line' + (m % 60 === 0 ? ' hour' : ''); line.style.top = ((m - range.start) * pxPerMin) + 'px'; col.appendChild(line); }
+    const dayEntries = entries.filter(e => e.day === day); const placed = layoutBlocks(dayEntries);
+    placed.forEach(p => {
+      const block = document.createElement('div'); block.className = 'tt-block';
+      const startMin = timeToMin(p.entry.startTime), endMin = timeToMin(p.entry.endTime);
+      const top = (startMin - range.start) * pxPerMin, height = Math.max(20, (endMin - startMin) * pxPerMin);
+      const color = BLOCK_COLORS[Math.abs(hashStr(p.entry.subject)) % BLOCK_COLORS.length];
+      block.style.cssText = `top:${top}px;height:${height}px;left:${p.col / p.totalCols * 100}%;width:${1 / p.totalCols * 100 - 1}%;background:${color}`;
+      const short = height < 40;
+      block.innerHTML = `<div class="bl-name">${short ? escHtml(p.entry.subject.slice(0, 8)) : escHtml(p.entry.subject)}</div>${height >= 40 ? `<div class="bl-time">${fmtTime(p.entry.startTime)}-${fmtTime(p.entry.endTime)}</div>` : ''}`;
+      block.title = `${p.entry.subject}\n${fmtTime(p.entry.startTime)} - ${fmtTime(p.entry.endTime)}`;
+      block.onclick = () => showBlockTooltip(block, p.entry);
+      col.appendChild(block);
+    }); grid.appendChild(col);
+  }); wrapper.appendChild(grid); return wrapper;
+}
+
+function showBlockTooltip(el, entry) { const tip = document.getElementById('tt-tooltip'); tip.innerHTML = `<strong class="text-white">${escHtml(entry.subject)}</strong><br><span class="text-gray-200">${entry.personName ? escHtml(entry.personName) + ' · ' : ''}${fmtTime(entry.startTime)} - ${fmtTime(entry.endTime)}</span>`; tip.classList.remove('hidden'); const r = el.getBoundingClientRect(); tip.style.left = Math.min(r.left, window.innerWidth - 230) + 'px'; tip.style.top = (r.bottom + 8) + 'px'; setTimeout(() => tip.classList.add('hidden'), 2500); }
+function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i); return h; }
+function fmtTime(t) { const [h, m] = t.split(':'); const hr = parseInt(h); return `${hr % 12 || 12}:${m}${hr >= 12 ? 'p' : 'a'}`; }
+function fmtMinTime(m) { const h = Math.floor(m / 60); const mi = m % 60; return `${h % 12 || 12}:${String(mi).padStart(2, '0')}${h >= 12 ? 'p' : 'a'}`; }
+function layoutBlocks(entries) { if (!entries.length) return []; const items = entries.map(e => ({ entry: e, start: timeToMin(e.startTime), end: timeToMin(e.endTime), col: 0, totalCols: 1 })); items.sort((a, b) => a.start - b.start || a.end - b.end); const groups = []; let group = [items[0]], groupEnd = items[0].end; for (let i = 1; i < items.length; i++) { if (items[i].start < groupEnd) { group.push(items[i]); groupEnd = Math.max(groupEnd, items[i].end); } else { groups.push(group); group = [items[i]]; groupEnd = items[i].end; } } groups.push(group); groups.forEach(g => { const cols = []; g.forEach(item => { let placed = false; for (let c = 0; c < cols.length; c++) { if (cols[c] <= item.start) { item.col = c; cols[c] = item.end; placed = true; break; } } if (!placed) { item.col = cols.length; cols.push(item.end); } }); const total = cols.length; g.forEach(item => item.totalCols = total); }); return items; }
+
+// ===== COMPARE =====
+let compareSelected = [];
+
+function compareView() {
+  const session = getSession(); if (!session) { showView('landing'); return ''; }
+  const div = document.createElement('div');
+  const hiddenIds = getHiddenUserIds(session.userId);
+  const schedules = getRecords('schedule').filter(s => { if (!showHiddenPeople && hiddenIds.includes(s.user_id)) return false; return true; });
+  let html = `<div class="flex items-center justify-between flex-wrap gap-2"><div><h2 class="text-xl sm:text-2xl font-bold text-gray-50">Compare Schedules</h2><p class="text-gray-300 text-sm mt-1">Find common free time.</p></div><button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button></div>`;
+  if (schedules.length < 2) { html += `<div class="card p-6 mt-4 text-center"><p class="text-gray-200">You need at least 2 schedules in the system to compare.</p></div>`; div.innerHTML = html; return div; }
+  const myGroups = getUserGroups(session.userId);
+  const groupBtns = myGroups.length ? `<div class="mt-2 flex gap-2 flex-wrap">${myGroups.map(g => `<button class="btn-secondary text-xs" onclick="addGroupToCompare('${g.group_id}')">+ ${escHtml(g.name)}</button>`).join('')}</div>` : '';
+  html += `<div class="card p-5 mt-4"><label class="form-label mb-2">Select people to compare</label><input id="compare-search" class="input-field" placeholder="Search people..." oninput="filterCompareList()"><div id="compare-checklist" class="mt-2 max-h-40 overflow-y-auto border border-gray-700 rounded-lg p-2 space-y-1" style="background:#111827"></div>${groupBtns}<div id="compare-chips" class="mt-3 flex flex-wrap gap-2"></div><p id="compare-hint" class="text-sm text-gray-300 mt-2">Select at least two people.</p><button id="compare-btn" class="btn-primary mt-4" onclick="doCompare()" disabled>Compare</button></div><div id="compare-results" class="mt-6"></div>`;
+  div.innerHTML = html; setTimeout(() => { renderCompareChecklist(); renderCompareChips(); }, 0); return div;
+}
+
+function addGroupToCompare(groupId) { const members = getGroupMembers(groupId); members.forEach(m => { const sched = getRecords('schedule').find(s => s.user_id === m.target_user_id); if (sched && !compareSelected.includes(sched.schedule_id)) compareSelected.push(sched.schedule_id); }); renderCompareChecklist(); renderCompareChips(); updateCompareBtn(); toast('Group members added.'); }
+function filterCompareList() { renderCompareChecklist(); }
+function renderCompareChecklist() { const session = getSession(); if (!session) return; const q = (document.getElementById('compare-search')?.value || '').toLowerCase(); const hiddenIds = getHiddenUserIds(session.userId); let schedules = getRecords('schedule'); if (!showHiddenPeople) { schedules = schedules.filter(s => !hiddenIds.includes(s.user_id)); } if (q) { schedules = schedules.filter(s => { const owner = findUserById(s.user_id); const hay = [s.name, owner?.full_name, owner?.school, owner?.degree_program].join(' ').toLowerCase(); return hay.includes(q); }); } const container = document.getElementById('compare-checklist'); if (!container) return; container.innerHTML = schedules.map(s => { const checked = compareSelected.includes(s.schedule_id) ? 'checked' : ''; return `<label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer text-sm"><input type="checkbox" ${checked} onchange="toggleCompareSelect('${s.schedule_id}',this.checked)" class="w-4 h-4"><span class="text-gray-100">${escHtml(s.name)}</span></label>`; }).join(''); }
+function toggleCompareSelect(id, checked) { if (checked) { if (!compareSelected.includes(id)) compareSelected.push(id); } else { compareSelected = compareSelected.filter(k => k !== id); } renderCompareChips(); updateCompareBtn(); }
+function removeCompareSelect(id) { compareSelected = compareSelected.filter(k => k !== id); renderCompareChecklist(); renderCompareChips(); updateCompareBtn(); }
+function renderCompareChips() { const container = document.getElementById('compare-chips'); if (!container) return; container.innerHTML = compareSelected.map(id => { const s = allData.find(r => r.type === 'schedule' && r.schedule_id === id); const name = s ? s.name : id; return `<span class="chip">${escHtml(name)}<button onclick="removeCompareSelect('${id}')">&times;</button></span>`; }).join(''); }
+function updateCompareBtn() { const btn = document.getElementById('compare-btn'); const hint = document.getElementById('compare-hint'); if (btn) btn.disabled = compareSelected.length < 2; if (hint) hint.style.display = compareSelected.length >= 2 ? 'none' : 'block'; }
+
+function doCompare() {
+  const container = document.getElementById('compare-results'); if (!container) return; container.innerHTML = '';
+  const selectedScheds = compareSelected.map(id => { const s = allData.find(r => r.type === 'schedule' && r.schedule_id === id); const entries = getScheduleEntries(id); const rows = entriesToRows(entries); return { name: s ? s.name : 'Unknown', entries: rows, scheduleId: id }; }).filter(Boolean);
+  const freeHtml = buildFreeTimeOverview(selectedScheds);
+  container.insertAdjacentHTML('beforeend', freeHtml);
+  const names = selectedScheds.map(s => s.name);
+  container.insertAdjacentHTML('beforeend', `<div class="card p-4 mt-4"><p class="text-sm text-gray-300 mb-2">Comparing ${names.length} people</p><div class="flex flex-wrap gap-2 mb-3">${names.map(n => `<span class="chip">${escHtml(n)}</span>`).join('')}</div><h3 class="text-lg font-bold text-gray-50">Combined Timetable</h3></div>`);
+  const ttDiv = document.createElement('div'); ttDiv.className = 'mt-4'; ttDiv.appendChild(buildCombinedTimetable(selectedScheds)); container.appendChild(ttDiv);
+  lucide.createIcons();
+}
+
+function buildFreeTimeOverview(schedules) {
+  const allEntries = []; schedules.forEach(s => { s.entries.forEach(row => { row.days.forEach(d => { allEntries.push({ day: d, start: timeToMin(row.startTime), end: timeToMin(row.endTime) }); }); }); });
+  const activeDays = getActiveDays(allEntries.map(e => ({ day: e.day })));
+  let html = '<div class="card p-4 sm:p-5"><h3 class="text-lg font-bold text-gray-50 mb-3">✓ Free Time Overview</h3><div class="space-y-2">';
+  activeDays.forEach(day => {
+    const dayBusy = allEntries.filter(e => e.day === day).sort((a, b) => a.start - b.start);
+    let merged = []; dayBusy.forEach(b => { if (merged.length && b.start <= merged[merged.length - 1][1]) merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], b.end); else merged.push([b.start, b.end]); });
+    const range = getScheduleTimeRange(allEntries.map(e => ({ startTime: `${Math.floor(e.start / 60)}:${String(e.start % 60).padStart(2, '0')}`, endTime: `${Math.floor(e.end / 60)}:${String(e.end % 60).padStart(2, '0')}` })));
+    let freeSlots = []; let prev = range.start; merged.forEach(m => { if (m[0] > prev) freeSlots.push([prev, m[0]]); prev = Math.max(prev, m[1]); }); if (prev < range.end) freeSlots.push([prev, range.end]);
+    const freeStr = freeSlots.length ? freeSlots.map(f => `<span class="inline-block bg-green-900 text-green-100 text-xs px-2 py-0.5 rounded mr-1 mb-1">${fmtMinTime(f[0])} - ${fmtMinTime(f[1])}</span>`).join('') : '<span class="text-gray-400 text-xs">No common free time</span>';
+    html += `<div class="flex flex-col sm:flex-row sm:items-center gap-1"><span class="text-sm font-medium text-gray-200 w-20">${day.slice(0, 3)}</span><div class="flex flex-wrap">${freeStr}</div></div>`;
+  });
+  html += '</div></div>'; return html;
+}
+
+function buildCombinedTimetable(schedules) {
+  const allEntries = []; schedules.forEach((s, idx) => { s.entries.forEach(row => { row.days.forEach(d => { allEntries.push({ subject: row.subject, day: d, startTime: row.startTime, endTime: row.endTime, personIdx: idx, personName: s.name }); }); }); });
+  const activeDays = getActiveDays(allEntries); const numDays = activeDays.length;
+  const range = getScheduleTimeRange(allEntries); const rangeSpan = range.end - range.start; const pxPerMin = GRID_HEIGHT / rangeSpan;
+  const wrapper = document.createElement('div'); wrapper.className = 'timetable-scroll';
+  const legendDiv = document.createElement('div'); legendDiv.className = 'mb-3 flex flex-wrap gap-3 text-xs';
+  schedules.forEach((s, idx) => { const color = PERSON_COLORS[idx % PERSON_COLORS.length]; legendDiv.innerHTML += `<div class="flex items-center gap-1.5"><div style="width:12px;height:12px;border-radius:3px;background:${color}"></div><span class="text-gray-200">${escHtml(s.name)}</span></div>`; });
+  legendDiv.innerHTML += `<div class="flex items-center gap-1.5"><div style="width:12px;height:12px;border-radius:3px;background:#2a2a2a;border:2px dashed #4a4a4a"></div><span class="text-gray-300">Free</span></div>`;
+  wrapper.appendChild(legendDiv);
+  const grid = document.createElement('div'); grid.className = 'timetable-grid';
+  grid.style.gridTemplateColumns = `52px repeat(${numDays},minmax(${numDays > 5 ? '70px' : '90px'},1fr))`;
+  grid.style.gridTemplateRows = `auto ${GRID_HEIGHT}px`;
+  ['Time', ...activeDays.map(d => d.slice(0, 3))].forEach(h => { const el = document.createElement('div'); el.className = 'tt-header'; el.textContent = h; grid.appendChild(el); });
+  const timeCol = document.createElement('div'); timeCol.className = 'tt-time-col'; timeCol.style.position = 'relative';
+  for (let m = range.start; m <= range.end; m += 60) { const lbl = document.createElement('div'); lbl.className = 'tt-time-label'; lbl.style.top = ((m - range.start) * pxPerMin) + 'px'; const h = Math.floor(m / 60); lbl.textContent = `${h % 12 || 12}${h >= 12 ? 'p' : 'a'}`; timeCol.appendChild(lbl); }
+  grid.appendChild(timeCol);
+  activeDays.forEach(day => {
+    const col = document.createElement('div'); col.className = 'timetable-day'; col.style.position = 'relative';
+    for (let m = range.start; m <= range.end; m += 30) { const line = document.createElement('div'); line.className = 'guide-line' + (m % 60 === 0 ? ' hour' : ''); line.style.top = ((m - range.start) * pxPerMin) + 'px'; col.appendChild(line); }
+    const dayEntries = allEntries.filter(e => e.day === day);
+    let busy = []; dayEntries.forEach(e => { busy.push([timeToMin(e.startTime), timeToMin(e.endTime)]); }); busy.sort((a, b) => a[0] - b[0]);
+    let merged = []; busy.forEach(b => { if (merged.length && b[0] <= merged[merged.length - 1][1]) merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], b[1]); else merged.push([...b]); });
+    let prev = range.start; merged.forEach(m => { if (m[0] > prev) renderFreeBlock(col, prev, m[0], range, pxPerMin); prev = Math.max(prev, m[1]); }); if (prev < range.end) renderFreeBlock(col, prev, range.end, range, pxPerMin);
+    const placed = layoutBlocks(dayEntries);
+    placed.forEach(p => {
+      const block = document.createElement('div'); block.className = 'tt-block';
+      const startMin = timeToMin(p.entry.startTime), endMin = timeToMin(p.entry.endTime);
+      const top = (startMin - range.start) * pxPerMin, height = Math.max(22, (endMin - startMin) * pxPerMin);
+      const color = PERSON_COLORS[p.entry.personIdx % PERSON_COLORS.length];
+      block.style.cssText = `top:${top}px;height:${height}px;left:${p.col / p.totalCols * 100}%;width:${1 / p.totalCols * 100 - 1}%;background:${color}`;
+      const short = height < 40;
+      block.innerHTML = `<div class="bl-person">${short ? escHtml(p.entry.personName.slice(0, 3)) : escHtml(p.entry.personName)}</div><div class="bl-name">${short ? escHtml(p.entry.subject.slice(0, 6)) : escHtml(p.entry.subject)}</div>${height >= 48 ? `<div class="bl-time">${fmtTime(p.entry.startTime)}-${fmtTime(p.entry.endTime)}</div>` : ''}`;
+      block.title = `${p.entry.personName}\n${p.entry.subject}\n${fmtTime(p.entry.startTime)} - ${fmtTime(p.entry.endTime)}`;
+      block.onclick = () => showBlockTooltip(block, p.entry);
+      col.appendChild(block);
+    }); grid.appendChild(col);
+  }); wrapper.appendChild(grid); return wrapper;
+}
+
+function renderFreeBlock(col, startMin, endMin, range, pxPerMin) {
+  const top = (startMin - range.start) * pxPerMin, height = (endMin - startMin) * pxPerMin;
+  const fb = document.createElement('div');
+  fb.style.cssText = `position:absolute;left:0;right:0;top:${top}px;height:${height}px;background:repeating-linear-gradient(45deg,#1a2e1a,#1a2e1a 8px,#162016 8px,#162016 16px);opacity:0.5;border-top:1px dashed #4a4a4a;border-bottom:1px dashed #4a4a4a;display:flex;align-items:center;justify-content:center`;
+  if (height >= 24) { const lbl = document.createElement('div'); lbl.style.cssText = 'font-size:0.65rem;font-weight:600;color:#6ee7b7;pointer-events:none'; lbl.textContent = 'Free'; fb.appendChild(lbl); }
+  col.appendChild(fb);
+}
+
+document.addEventListener('click', e => { if (!e.target.closest('.tt-block')) document.getElementById('tt-tooltip').classList.add('hidden'); });
+
+// ===== CSV IMPORT / MIGRATION =====
+
+// CSV import intentionally removed from the browser.
+// Existing CSV data will be migrated separately after the frontend/backend are verified.
+
+// ===== INIT =====
+initializeDataLayer();
 </script>
-</body>
-</html>
+ 
+</body></html>
