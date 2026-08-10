@@ -799,13 +799,105 @@ function compareView() {
 }
 
 function addGroupToCompare(groupId) { const members = getGroupMembers(groupId); members.forEach(m => { const sched = getRecords('schedule').find(s => s.user_id === m.target_user_id); if (sched && !compareSelected.includes(sched.schedule_id)) compareSelected.push(sched.schedule_id); }); renderCompareChecklist(); renderCompareChips(); updateCompareBtn(); toast('Group members added.'); }
-function filterCompareList() { renderCompareChecklist(); }
-function renderCompareChecklist() { const session = getSession(); if (!session) return; const q = (document.getElementById('compare-search')?.value || '').toLowerCase(); const hiddenIds = getHiddenUserIds(session.userId); let schedules = getRecords('schedule'); if (!showHiddenPeople) { schedules = schedules.filter(s => !hiddenIds.includes(s.user_id)); } if (q) { schedules = schedules.filter(s => { const owner = findUserById(s.user_id); const hay = [s.name, owner?.full_name, owner?.school, owner?.degree_program].join(' ').toLowerCase(); return hay.includes(q); }); } const container = document.getElementById('compare-checklist'); if (!container) return; container.innerHTML = schedules.map(s => { const checked = compareSelected.includes(s.schedule_id) ? 'checked' : ''; return `<label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer text-sm"><input type="checkbox" ${checked} onchange="toggleCompareSelect('${s.schedule_id}',this.checked)" class="w-4 h-4"><span class="text-gray-100">${escHtml(s.name)}</span></label>`; }).join(''); }
-function toggleCompareSelect(id, checked) { if (checked) { if (!compareSelected.includes(id)) compareSelected.push(id); } else { compareSelected = compareSelected.filter(k => k !== id); } renderCompareChips(); updateCompareBtn(); }
-function removeCompareSelect(id) { compareSelected = compareSelected.filter(k => k !== id); renderCompareChecklist(); renderCompareChips(); updateCompareBtn(); }
-function renderCompareChips() { const container = document.getElementById('compare-chips'); if (!container) return; container.innerHTML = compareSelected.map(id => { const s = allData.find(r => r.type === 'schedule' && r.schedule_id === id); const name = s ? s.name : id; return `<span class="chip">${escHtml(name)}<button onclick="removeCompareSelect('${id}')">&times;</button></span>`; }).join(''); }
-function updateCompareBtn() { const btn = document.getElementById('compare-btn'); const hint = document.getElementById('compare-hint'); if (btn) btn.disabled = compareSelected.length < 2; if (hint) hint.style.display = compareSelected.length >= 2 ? 'none' : 'block'; }
 
+function filterCompareList() { renderCompareChecklist(); }
+
+function renderCompareChecklist() {
+    const session = getSession();
+    if (!session) return;
+
+    const q = (document.getElementById('compare-search')?.value || '').toLowerCase();
+    const hiddenIds = getHiddenUserIds(session.userId);
+
+    let schedules = getRecords('schedule');
+
+    if (!showHiddenPeople) {
+        schedules = schedules.filter(s => !hiddenIds.includes(s.user_id));
+    }
+
+    if (q) {
+        schedules = schedules.filter(s => {
+            const owner = findUserById(s.user_id);
+
+            const hay = [
+                s.name,
+                owner?.username,
+                owner?.full_name,
+                owner?.school,
+                owner?.degree_program
+            ].join(' ').toLowerCase();
+
+            return hay.includes(q);
+        });
+    }
+
+    const container = document.getElementById('compare-checklist');
+    if (!container) return;
+
+    container.innerHTML = schedules.map(s => {
+        const checked = compareSelected.includes(s.schedule_id) ? 'checked' : '';
+
+        const owner = findUserById(s.user_id);
+
+        const displayName =
+            owner?.username ||
+            owner?.full_name ||
+            s.name ||
+            'Unknown';
+
+        return `<label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer text-sm">
+            <input type="checkbox" ${checked} onchange="toggleCompareSelect('${s.schedule_id}',this.checked)" class="w-4 h-4">
+            <span class="text-gray-100">${escHtml(displayName)}</span>
+        </label>`;
+    }).join('');
+}
+
+function toggleCompareSelect(id, checked) {
+    if (checked) {
+        if (!compareSelected.includes(id)) compareSelected.push(id);
+    } else {
+        compareSelected = compareSelected.filter(k => k !== id);
+    }
+
+    renderCompareChips();
+    updateCompareBtn();
+}
+
+function removeCompareSelect(id) {
+    compareSelected = compareSelected.filter(k => k !== id);
+    renderCompareChecklist();
+    renderCompareChips();
+    updateCompareBtn();
+}
+
+function renderCompareChips() {
+    const container = document.getElementById('compare-chips');
+    if (!container) return;
+
+    container.innerHTML = compareSelected.map(id => {
+        const s = allData.find(
+            r => r.type === 'schedule' && r.schedule_id === id
+        );
+
+        const owner = s ? findUserById(s.user_id) : null;
+
+        const name =
+            owner?.username ||
+            owner?.full_name ||
+            s?.name ||
+            id;
+
+        return `<span class="chip">${escHtml(name)}<button onclick="removeCompareSelect('${id}')">&times;</button></span>`;
+    }).join('');
+}
+
+function updateCompareBtn() {
+    const btn = document.getElementById('compare-btn');
+    const hint = document.getElementById('compare-hint');
+
+    if (btn) btn.disabled = compareSelected.length < 2;
+    if (hint) hint.style.display = compareSelected.length >= 2 ? 'none' : 'block';
+}
 function doCompare() {
   const container = document.getElementById('compare-results'); if (!container) return; container.innerHTML = '';
   const selectedScheds = compareSelected.map(id => { const s = allData.find(r => r.type === 'schedule' && r.schedule_id === id); const entries = getScheduleEntries(id); const rows = entriesToRows(entries); return { name: s ? s.name : 'Unknown', entries: rows, scheduleId: id }; }).filter(Boolean);
