@@ -84,14 +84,48 @@ select.input-field{appearance:auto}
  <body data-template-id="__page-root" class="min-h-screen">
   <nav id="main-nav" class="hidden border-b sticky top-0 z-50" style="background:var(--card-bg);border-color:var(--card-border)">
    <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14"><span data-template-id="nav-brand" class="canva-text font-bold text-lg cursor-pointer" style="color: rgb(220, 38, 38); font-weight: 700; font-style: normal; font-size: 22px;" onclick="showView('dashboard')">UPlanner</span>
-    <div class="nav-links flex items-center gap-1 flex-wrap"><span class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:16px;height:16px"></i><span class="hidden md:inline">Home</span></span><span class="nav-link" data-nav="search"><i data-lucide="search" style="width:16px;height:16px"></i><span class="hidden md:inline">Search</span></span><span class="nav-link" data-nav="own-schedule"><i data-lucide="calendar" style="width:16px;height:16px"></i><span class="hidden md:inline">Schedule</span></span><span class="nav-link" data-nav="compare"><i data-lucide="git-compare" style="width:16px;height:16px"></i><span class="hidden md:inline">Compare</span></span><span class="nav-link" data-nav="groups"><i data-lucide="users" style="width:16px;height:16px"></i><span class="hidden md:inline">Groups</span></span><span class="nav-link" data-nav="profile"><i data-lucide="user" style="width:16px;height:16px"></i><span class="hidden md:inline">Profile</span></span><span class="nav-link" data-nav="logout" style="color:#f87171"><i data-lucide="log-out" style="width:16px;height:16px"></i><span class="hidden md:inline">Logout</span></span>
+    <div class="nav-links flex items-center gap-1 flex-wrap"><span class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:16px;height:16px"></i><span class="hidden md:inline">Home</span></span><span class="nav-link" data-nav="search">
+        
+        <span
+        class="nav-link"
+        data-nav="people"
+        >
+        <i
+            data-lucide="users-round"
+            style="width:16px;height:16px"
+        ></i>
+
+        <span class="hidden md:inline">
+            People
+        </span>
+        </span>
+        
+        
+        
+        <i data-lucide="search" style="width:16px;height:16px"></i><span class="hidden md:inline">Search</span></span><span class="nav-link" data-nav="own-schedule"><i data-lucide="calendar" style="width:16px;height:16px"></i><span class="hidden md:inline">Schedule</span></span><span class="nav-link" data-nav="compare"><i data-lucide="git-compare" style="width:16px;height:16px"></i><span class="hidden md:inline">Compare</span></span><span class="nav-link" data-nav="groups"><i data-lucide="users" style="width:16px;height:16px"></i><span class="hidden md:inline">Groups</span></span><span class="nav-link" data-nav="profile"><i data-lucide="user" style="width:16px;height:16px"></i><span class="hidden md:inline">Profile</span></span><span class="nav-link" data-nav="logout" style="color:#f87171"><i data-lucide="log-out" style="width:16px;height:16px"></i><span class="hidden md:inline">Logout</span></span>
     </div>
    </div>
   </nav>
   <div id="bottom-nav" class="bottom-nav hidden">
    <div class="bottom-nav-item" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:20px;height:20px"></i>Home
    </div>
-   <div class="bottom-nav-item" data-nav="search"><i data-lucide="search" style="width:20px;height:20px"></i>Search
+   <div class="bottom-nav-item" data-nav="search">
+    <div
+  class="bottom-nav-item"
+  data-nav="people"
+>
+  <i
+    data-lucide="users-round"
+    style="width:20px;height:20px"
+  ></i>
+
+  People
+</div>
+    
+    
+    
+    
+    <i data-lucide="search" style="width:20px;height:20px"></i>Search
    </div>
    <div class="bottom-nav-item" data-nav="own-schedule"><i data-lucide="calendar" style="width:20px;height:20px"></i>Sched
    </div>
@@ -864,6 +898,351 @@ async function acknowledgeWhatsNew() {
     }
 }
 
+function showPeopleDiscoveryModal() {
+  const existing =
+    document.getElementById(
+      'uplanner-people-discovery-modal'
+    );
+
+  if (existing) {
+    existing.remove();
+  }
+
+  const modal =
+    document.createElement('div');
+
+  modal.id =
+    'uplanner-people-discovery-modal';
+
+  modal.className =
+    'fixed inset-0 z-[9997] flex items-center justify-center p-4';
+
+  modal.innerHTML = `
+    <div
+      class="absolute inset-0
+             bg-black/75
+             backdrop-blur-sm">
+    </div>
+
+    <div
+      class="relative card
+             w-full max-w-2xl
+             p-6 sm:p-8">
+
+      <!-- ICON -->
+      <div class="text-center">
+
+        <div
+          class="
+            mx-auto
+            w-16 h-16
+            rounded-2xl
+            flex
+            items-center
+            justify-center
+            text-3xl
+          "
+          style="
+            background:
+              linear-gradient(
+                135deg,
+                rgba(220,38,38,.25),
+                rgba(220,38,38,.08)
+              );
+            border:
+              1px solid
+              rgba(220,38,38,.35);
+          "
+        >
+          👥
+        </div>
+
+        <h2
+          class="
+            text-2xl
+            font-bold
+            text-gray-50
+            mt-5
+          "
+        >
+          Find People You Might Know
+        </h2>
+
+        <p
+          class="
+            text-gray-400
+            mt-2
+            max-w-xl
+            mx-auto
+          "
+        >
+          Discover people who share your
+          school, degree program, or other
+          academic background.
+        </p>
+
+      </div>
+
+      <!-- FEATURES -->
+      <div
+        class="
+          grid
+          grid-cols-1
+          sm:grid-cols-3
+          gap-3
+          mt-7
+        "
+      >
+
+        <div class="card p-4 text-center">
+
+          <div class="text-2xl">
+            🏫
+          </div>
+
+          <h3
+            class="
+              font-semibold
+              text-gray-100
+              mt-2
+            "
+          >
+            Same School
+          </h3>
+
+          <p
+            class="
+              text-xs
+              text-gray-400
+              mt-1
+            "
+          >
+            Find people from
+            the same institution.
+          </p>
+
+        </div>
+
+        <div class="card p-4 text-center">
+
+          <div class="text-2xl">
+            🎓
+          </div>
+
+          <h3
+            class="
+              font-semibold
+              text-gray-100
+              mt-2
+            "
+          >
+            Same Degree
+          </h3>
+
+          <p
+            class="
+              text-xs
+              text-gray-400
+              mt-1
+            "
+          >
+            Discover people
+            studying similar programs.
+          </p>
+
+        </div>
+
+        <div class="card p-4 text-center">
+
+          <div class="text-2xl">
+            🔎
+          </div>
+
+          <h3
+            class="
+              font-semibold
+              text-gray-100
+              mt-2
+            "
+          >
+            Smart Filters
+          </h3>
+
+          <p
+            class="
+              text-xs
+              text-gray-400
+              mt-1
+            "
+          >
+            Combine multiple
+            filters to find exactly
+            who you're looking for.
+          </p>
+
+        </div>
+
+      </div>
+
+      <!-- PRIVACY NOTE -->
+      <div
+        class="
+          mt-6
+          rounded-xl
+          p-4
+        "
+        style="
+          background:
+            rgba(255,255,255,.035);
+          border:
+            1px solid
+            rgba(255,255,255,.06);
+        "
+      >
+
+        <div class="flex gap-3">
+
+          <div class="text-lg">
+            🔒
+          </div>
+
+          <p
+            class="
+              text-sm
+              leading-6
+              text-gray-300
+            "
+          >
+            You remain in control of
+            your profile visibility.
+            You can change your discovery
+            preferences and manage blocked
+            people from Settings.
+          </p>
+
+        </div>
+
+      </div>
+
+      <!-- BUTTONS -->
+      <div
+        class="
+          flex
+          flex-col
+          sm:flex-row
+          gap-3
+          mt-6
+        "
+      >
+
+        <button
+          class="
+            btn-secondary
+            flex-1
+          "
+          onclick="
+            completePeopleDiscovery(
+              false
+            )
+          "
+        >
+          Maybe Later
+        </button>
+
+        <button
+          class="
+            btn-primary
+            flex-1
+          "
+          onclick="
+            completePeopleDiscovery(
+              true
+            )
+          "
+        >
+          Find People
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+async function completePeopleDiscovery(openPeoplePage) {
+  try {
+    const response =
+      await fetch(
+        '/api/onboarding/complete',
+        {
+          method: 'POST',
+
+          credentials:
+            'include',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            'Accept':
+              'application/json'
+          },
+
+          body: JSON.stringify({
+            feature:
+              'people_discovery',
+
+            version:
+              CURRENT_APP_VERSION
+          })
+        }
+      );
+
+    const result =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        'Failed to save onboarding state.'
+      );
+    }
+
+    onboardingState
+      .people_discovery_completed_version =
+        CURRENT_APP_VERSION;
+
+    const modal =
+      document.getElementById(
+        'uplanner-people-discovery-modal'
+      );
+
+    if (modal) {
+      modal.remove();
+    }
+
+    if (openPeoplePage) {
+      showView('people');
+    }
+
+  } catch (error) {
+
+    console.error(
+      '[People onboarding]',
+      error
+    );
+
+    toast(
+      'Could not save your preference.',
+      'error'
+    );
+  }
+}
+
+
+
 function runOnboarding() {
   const session = getSession();
 
@@ -872,7 +1251,8 @@ function runOnboarding() {
   }
 
   /*
-   * PRIVACY
+   * STEP 1:
+   * Privacy Notice
    */
   if (
     onboardingState.privacy_completed_version
@@ -883,7 +1263,8 @@ function runOnboarding() {
   }
 
   /*
-   * WHAT'S NEW
+   * STEP 2:
+   * What's New
    */
   if (
     onboardingState.whats_new_version
@@ -892,6 +1273,18 @@ function runOnboarding() {
   ) {
     whatsNewShownThisSession = true;
     showWhatsNewModal();
+    return;
+  }
+
+  /*
+   * STEP 3:
+   * Find People You Might Know
+   */
+  if (
+    onboardingState.people_discovery_completed_version
+      !== CURRENT_APP_VERSION
+  ) {
+    showPeopleDiscoveryModal();
     return;
   }
 }
@@ -979,7 +1372,7 @@ function render(params) {
   const session = getSession(); const loggedIn = !!session;
   nav.classList.toggle('hidden', !loggedIn); bottomNav.classList.toggle('hidden', !loggedIn);
   document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === currentView); });
-  const views = { landing, signup, login, 'profile-setup': profileSetup, dashboard, 'own-schedule': ownSchedule, search: searchView, 'view-schedule': viewSchedule, 'edit-schedule': editSchedule, compare: compareView, profile: profileView, 'view-profile': viewProfileView, groups: groupsView, 'group-detail': groupDetailView, 'how-to-use': howToUseView };
+  const views = { landing, signup, login, 'profile-setup': profileSetup, dashboard, people: peopleView, 'own-schedule': ownSchedule, search: searchView, 'view-schedule': viewSchedule, 'edit-schedule': editSchedule, compare: compareView, profile: profileView, 'view-profile': viewProfileView, groups: groupsView, 'group-detail': groupDetailView, 'how-to-use': howToUseView };
   app.innerHTML = ''; const el = (views[currentView] || landing)(params);
   if (typeof el === 'string') app.innerHTML = el; else if (el) app.appendChild(el);
   lucide.createIcons();
@@ -1001,6 +1394,7 @@ function landing() { const session = getSession(); if (session) { showView('dash
 function signup() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="signup-heading" class="text-3xl font-bold">Create Account</h2><p class="mt-2 text-gray-300">Choose a nickname to get started.</p></div><div class="mt-8"><label class="form-label" for="su-input">Nickname</label><input id="su-input" class="input-field" placeholder="Enter your nickname"><p id="su-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="su-btn" class="btn-primary w-full mt-6" onclick="doSignup()">Create Account</button><p class="mt-6 text-center text-sm text-gray-400">Already have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('login')">Log In</a></p></div>`; }
 
 function login() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="login-heading" class="text-3xl font-bold">Welcome Back</h2><p class="mt-2 text-gray-300">Enter your nickname to access your schedules.</p></div><div class="mt-8"><label class="form-label" for="li-input">Nickname</label><input id="li-input" class="input-field" placeholder="Enter your nickname"><p id="li-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="li-btn" class="btn-primary w-full mt-6" onclick="doLogin()">Log In</button><p class="mt-6 text-center text-sm text-gray-400">Don't have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('signup')">Create one</a></p></div>`; }
+
 
 async function doSignup() {
   const inp = document.getElementById('su-input'), err = document.getElementById('su-err'), btn = document.getElementById('su-btn');
@@ -1662,7 +2056,62 @@ async function saveSchedule() {
   btn.disabled = false; btn.textContent = 'Save Schedule'; toast('Schedule saved!', 'success');
   if (editorReturnView && editorReturnView !== 'landing') showView(editorReturnView, editorReturnParams); else showView('dashboard');
 }
+async function saveSelectedPeople() {
 
+  const userIds =
+    Array.from(
+      peopleSelected
+    );
+
+  if (!userIds.length) {
+    return;
+  }
+
+  try {
+
+    await apiRequest(
+      '/api/people/save',
+      {
+        method: 'POST',
+
+        body:
+          JSON.stringify({
+            user_ids:
+              userIds
+          })
+      }
+    );
+
+    toast(
+      `${
+        userIds.length
+      } ${
+        userIds.length === 1
+          ? 'person'
+          : 'people'
+      } added to your list.`,
+      'success'
+    );
+
+    peopleSelected.clear();
+
+    renderPeopleSelectionBar();
+    renderPeopleResults();
+
+  } catch (error) {
+
+    console.error(
+      '[People] save failed:',
+      error
+    );
+
+    toast(
+      error.message ||
+        'Could not save selected people.',
+      'error'
+    );
+  }
+}
 // ===== SEARCH / DIRECTORY =====
 let searchSort = 'username'; let searchSortDir = 1; let searchFilter = 'all'; let searchCompactMode = false;
 
@@ -1857,6 +2306,849 @@ async function removeFromGroup(groupId, targetUserId) {
   const member = allData.find(r => r.type === 'group_member' && r.group_id === groupId && r.target_user_id === targetUserId);
   if (member) { const r = await deleteRecord(member); if (r.isOk) toast('Removed from group.'); else toast('Failed.', 'error'); }
 }
+
+let peopleData = [];
+
+let peopleFilters = {
+  schools: [],
+  degrees: []
+};
+
+let peopleFilterMode = 'any';
+
+let peopleSelected = new Set();
+
+let peopleSearch = '';
+
+async function loadPeople() {
+  try {
+
+    const response =
+      await fetch(
+        '/api/people',
+        {
+          credentials: 'include',
+
+          headers: {
+            'Accept':
+              'application/json'
+          }
+        }
+      );
+
+    const result =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        'Failed to load people.'
+      );
+    }
+
+    peopleData =
+      Array.isArray(result.people)
+        ? result.people
+        : [];
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      '[People] load failed:',
+      error
+    );
+
+    peopleData = [];
+
+    toast(
+      'Could not load people.',
+      'error'
+    );
+
+    return false;
+  }
+}
+function peopleView() {
+
+  const session = getSession();
+
+  if (!session) {
+    return `
+      <div class="card p-8 text-center">
+        <h2 class="text-xl font-bold">
+          Please log in first.
+        </h2>
+      </div>
+    `;
+  }
+
+  /*
+   * Load the People data after
+   * the page itself renders.
+   */
+  setTimeout(async () => {
+
+    const loaded =
+      await loadPeople();
+
+    if (!loaded) {
+      return;
+    }
+
+    renderPeopleFilters();
+    renderPeopleResults();
+
+  }, 0);
+
+  return `
+    <div>
+
+      <!-- HEADER -->
+      <div
+        class="
+          flex
+          flex-col
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+          gap-4
+          mb-6
+        "
+      >
+
+        <div>
+
+          <h2
+            class="
+              text-2xl
+              font-bold
+              text-gray-50
+            "
+          >
+            Find People
+          </h2>
+
+          <p
+            class="
+              text-sm
+              text-gray-400
+              mt-1
+            "
+          >
+            Discover people with similar
+            academic backgrounds.
+          </p>
+
+        </div>
+
+        <button
+          class="btn-secondary"
+          onclick="
+            clearPeopleFilters()
+          "
+        >
+          Clear Filters
+        </button>
+
+      </div>
+
+      <!-- SEARCH -->
+      <div
+        class="
+          card
+          p-4
+          mb-4
+        "
+      >
+
+        <div
+          class="
+            relative
+          "
+        >
+
+          <i
+            data-lucide="search"
+            class="
+              absolute
+              left-3
+              top-1/2
+              -translate-y-1/2
+              text-gray-500
+            "
+            style="
+              width:18px;
+              height:18px;
+            "
+          ></i>
+
+          <input
+            id="people-search"
+            class="
+              input-field
+              pl-10
+            "
+            placeholder="
+              Search names, schools,
+              degrees...
+            "
+            oninput="
+              peopleSearch =
+                this.value.toLowerCase();
+
+              renderPeopleResults();
+            "
+          >
+
+          <div
+            id="people-selection-bar"
+            class="
+                hidden
+                card
+                p-4
+                mb-4
+                border-red-500/30
+            "
+            >
+            </div>
+
+        </div>
+
+      </div>
+
+      <!-- FILTERS -->
+      <div
+        id="people-filter-panel"
+        class="
+          card
+          p-5
+          mb-5
+        "
+      >
+        Loading filters...
+      </div>
+
+      <!-- RESULTS -->
+      <div
+        class="mb-3 flex items-center
+               justify-between"
+      >
+
+        <h3
+          class="
+            font-semibold
+            text-gray-100
+          "
+        >
+          People
+        </h3>
+
+        <span
+          id="people-result-count"
+          class="
+            text-sm
+            text-gray-500
+          "
+        >
+        </span>
+
+      </div>
+
+      <div
+        id="people-results"
+        class="space-y-3"
+      >
+
+        <div
+          class="
+            card
+            p-8
+            text-center
+            text-gray-400
+          "
+        >
+          Loading people...
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+function getAvailableSchoolTags() {
+
+  const map =
+    new Map();
+
+  peopleData.forEach(person => {
+
+    (person.school_tags || [])
+      .forEach(tag => {
+
+        map.set(
+          String(tag.id),
+          tag
+        );
+
+      });
+
+  });
+
+  return Array.from(
+    map.values()
+  ).sort(
+    (a, b) =>
+      a.display_name.localeCompare(
+        b.display_name
+      )
+  );
+}
+
+
+function getAvailableDegreeTags() {
+
+  const map =
+    new Map();
+
+  peopleData.forEach(person => {
+
+    (person.degree_tags || [])
+      .forEach(tag => {
+
+        map.set(
+          String(tag.id),
+          tag
+        );
+
+      });
+
+  });
+
+  return Array.from(
+    map.values()
+  ).sort(
+    (a, b) =>
+      a.display_name.localeCompare(
+        b.display_name
+      )
+  );
+}
+
+function togglePeopleSchool(id) {
+
+  id = String(id);
+
+  if (
+    peopleFilters.schools
+      .includes(id)
+  ) {
+
+    peopleFilters.schools =
+      peopleFilters.schools.filter(
+        value => value !== id
+      );
+
+  } else {
+
+    peopleFilters.schools.push(id);
+
+  }
+
+  renderPeopleFilters();
+  renderPeopleResults();
+}
+
+
+function togglePeopleDegree(id) {
+
+  id = String(id);
+
+  if (
+    peopleFilters.degrees
+      .includes(id)
+  ) {
+
+    peopleFilters.degrees =
+      peopleFilters.degrees.filter(
+        value => value !== id
+      );
+
+  } else {
+
+    peopleFilters.degrees.push(id);
+
+  }
+
+  renderPeopleFilters();
+  renderPeopleResults();
+}
+
+
+function clearPeopleFilters() {
+
+  peopleFilters = {
+    schools: [],
+    degrees: []
+  };
+
+  peopleFilterMode = 'any';
+  peopleSearch = '';
+
+  const search =
+    document.getElementById(
+      'people-search'
+    );
+
+  if (search) {
+    search.value = '';
+  }
+
+  renderPeopleFilters();
+  renderPeopleResults();
+}
+
+function personMatchesPeopleFilters(
+  person
+) {
+
+  const schoolIds =
+    (person.school_tags || [])
+      .map(tag =>
+        String(tag.id)
+      );
+
+  const degreeIds =
+    (person.degree_tags || [])
+      .map(tag =>
+        String(tag.id)
+      );
+
+  const selectedSchools =
+    peopleFilters.schools;
+
+  const selectedDegrees =
+    peopleFilters.degrees;
+
+  const hasFilters =
+    selectedSchools.length ||
+    selectedDegrees.length;
+
+  if (!hasFilters) {
+    return true;
+  }
+
+  const schoolMatches =
+    selectedSchools.filter(
+      id => schoolIds.includes(id)
+    );
+
+  const degreeMatches =
+    selectedDegrees.filter(
+      id => degreeIds.includes(id)
+    );
+
+  if (
+    peopleFilterMode === 'any'
+  ) {
+
+    return (
+      schoolMatches.length > 0 ||
+      degreeMatches.length > 0
+    );
+
+  }
+
+  /*
+   * MATCH ALL
+   */
+  if (
+    selectedSchools.length &&
+    schoolMatches.length !==
+      selectedSchools.length
+  ) {
+    return false;
+  }
+
+  if (
+    selectedDegrees.length &&
+    degreeMatches.length !==
+      selectedDegrees.length
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function renderPeopleResults() {
+    renderPeopleSelectionBar();
+  const container =
+    document.getElementById(
+      'people-results'
+    );
+
+  if (!container) {
+    return;
+  }
+
+  let results =
+    peopleData.filter(
+      person =>
+        personMatchesPeopleFilters(
+          person
+        )
+    );
+
+  /*
+   * SEARCH
+   */
+  const q =
+    peopleSearch.trim();
+
+  if (q) {
+
+    results =
+      results.filter(person => {
+
+        const schoolText =
+          (person.school_tags || [])
+            .map(tag =>
+              tag.display_name
+            )
+            .join(' ');
+
+        const degreeText =
+          (person.degree_tags || [])
+            .map(tag =>
+              tag.display_name
+            )
+            .join(' ');
+
+        const searchable = [
+          person.username,
+          person.full_name,
+          person.school,
+          person.degree_program,
+          schoolText,
+          degreeText
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(
+          q
+        );
+      });
+
+  }
+
+  const count =
+    document.getElementById(
+      'people-result-count'
+    );
+
+  if (count) {
+    count.textContent =
+      `${results.length} ${
+        results.length === 1
+          ? 'person'
+          : 'people'
+      }`;
+  }
+
+  if (!results.length) {
+
+    container.innerHTML = `
+      <div
+        class="
+          card
+          p-10
+          text-center
+        "
+      >
+
+        <div
+          class="
+            text-4xl
+            mb-4
+          "
+        >
+          🔎
+        </div>
+
+        <h3
+          class="
+            text-lg
+            font-semibold
+            text-gray-100
+          "
+        >
+          No people found
+        </h3>
+
+        <p
+          class="
+            text-sm
+            text-gray-500
+            mt-2
+          "
+        >
+          Try removing a filter
+          or changing your search.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML =
+    results
+      .map(
+        person =>
+          renderPersonCard(
+            person
+          )
+      )
+      .join('');
+}
+
+function renderPersonCard(person) {
+
+  const selected =
+    peopleSelected.has(
+      person.user_id
+    );
+
+  const schoolTags =
+    person.school_tags || [];
+
+  const degreeTags =
+    person.degree_tags || [];
+
+  return `
+    <div
+      class="
+        card
+        p-4
+        transition
+        ${
+          selected
+            ? 'border-red-400 ring-1 ring-red-400/30'
+            : 'border-transparent'
+        }
+      "
+    >
+
+      <div
+        class="
+          flex
+          items-start
+          gap-3
+        "
+      >
+
+        <!-- AVATAR -->
+        <div
+          class="
+            w-12
+            h-12
+            rounded-xl
+            flex
+            items-center
+            justify-center
+            text-xl
+            shrink-0
+          "
+          style="
+            background:
+              ${escHtml(
+                person.profile_color ||
+                '#fca5a5'
+              )};
+          "
+        >
+          ${escHtml(
+            person.profile_emoji ||
+            '😊'
+          )}
+        </div>
+
+        <!-- INFO -->
+        <div class="min-w-0 flex-1">
+
+          <div
+            class="
+              flex
+              items-start
+              justify-between
+              gap-3
+            "
+          >
+
+            <div>
+
+              <h3
+                class="
+                  font-semibold
+                  text-gray-50
+                "
+              >
+                ${escHtml(
+                  person.username
+                )}
+              </h3>
+
+              ${
+                person.full_name
+                  ? `
+                    <p
+                      class="
+                        text-sm
+                        text-gray-400
+                        mt-0.5
+                      "
+                    >
+                      ${escHtml(
+                        person.full_name
+                      )}
+                    </p>
+                  `
+                  : ''
+              }
+
+            </div>
+
+            <!-- CHECKBOX -->
+            <button
+              type="button"
+              class="
+                w-9
+                h-9
+                rounded-lg
+                flex
+                items-center
+                justify-center
+                border
+                transition
+                shrink-0
+                ${
+                  selected
+                    ? 'bg-red-600 border-red-400 text-white'
+                    : 'border-gray-700 text-gray-500 hover:border-gray-500'
+                }
+              "
+              onclick="
+                togglePersonSelection(
+                  '${person.user_id}'
+                )
+              "
+              aria-label="Select person"
+            >
+              ${
+                selected
+                  ? '✓'
+                  : ''
+              }
+            </button>
+
+          </div>
+
+          <!-- TAGS -->
+          <div
+            class="
+              flex
+              flex-wrap
+              gap-2
+              mt-3
+            "
+          >
+
+            ${schoolTags.map(tag => `
+              <span
+                class="
+                  px-2.5
+                  py-1
+                  rounded-full
+                  text-xs
+                  bg-blue-500/10
+                  text-blue-300
+                  border
+                  border-blue-500/10
+                "
+              >
+                🏫
+                ${escHtml(
+                  tag.display_name
+                )}
+              </span>
+            `).join('')}
+
+            ${degreeTags.map(tag => `
+              <span
+                class="
+                  px-2.5
+                  py-1
+                  rounded-full
+                  text-xs
+                  bg-purple-500/10
+                  text-purple-300
+                  border
+                  border-purple-500/10
+                "
+              >
+                🎓
+                ${escHtml(
+                  tag.display_name
+                )}
+              </span>
+            `).join('')}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+function togglePersonSelection(
+  userId
+) {
+
+  userId = String(
+    userId
+  );
+
+  if (
+    peopleSelected.has(
+      userId
+    )
+  ) {
+
+    peopleSelected.delete(
+      userId
+    );
+
+  } else {
+
+    peopleSelected.add(
+      userId
+    );
+
+  }
+
+  renderPeopleResults();
+}
+
+
 
 // ===== TIMETABLE =====
 const GRID_HEIGHT = 600;
