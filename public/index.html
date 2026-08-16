@@ -79,36 +79,730 @@ body{padding-bottom:60px}
 .tt-tooltip{position:fixed;background:#273449;border:1px solid var(--card-border);border-radius:0.5rem;padding:0.75rem;font-size:0.8rem;color:#f3f4f6;z-index:100;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
 select.input-field{appearance:auto}
 .badge-hidden{background:#7c2d12;color:#fed7aa;font-size:0.65rem;padding:2px 6px;border-radius:9999px;font-weight:600}
+
+/* =========================================================
+   UPLANNER UI 3.0 — visual system + interaction polish
+   Keeps existing Tailwind utility classes/API contracts intact.
+   ========================================================= */
+:root{
+  --primary:#ef4444;
+  --primary-light:#f87171;
+  --primary-dark:#b91c1c;
+  --accent:#fb7185;
+  --accent-light:#fecdd3;
+  --success:#34d399;
+  --warning:#fbbf24;
+  --info:#60a5fa;
+  --bg:#080b12;
+  --surface:#101722;
+  --surface-2:#151d2b;
+  --surface-3:#1b2637;
+  --border:rgba(148,163,184,.16);
+  --border-strong:rgba(148,163,184,.24);
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --muted-strong:#cbd5e1;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.25);
+  --shadow-md:0 14px 35px rgba(0,0,0,.25);
+  --shadow-lg:0 28px 70px rgba(0,0,0,.36);
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:22px;
+  --vh:1vh;
+}
+html{
+  scroll-behavior:smooth;
+  color-scheme:dark;
+}
+body{
+  min-height:100vh;
+  min-height:100dvh;
+  font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(239,68,68,.12), transparent 34rem),
+    radial-gradient(circle at 95% 10%, rgba(96,165,250,.08), transparent 28rem),
+    linear-gradient(145deg,#070a10 0%,#0b1019 45%,#0a0f18 100%);
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(3,7,18,.76),rgba(3,7,18,.88)),
+    url('/background.png');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  opacity:.9;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(239,68,68,.035) 1px,transparent 1px),
+    linear-gradient(rgba(239,68,68,.028) 1px,transparent 1px);
+  background-size:46px 46px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.48),transparent 78%);
+}
+*{box-sizing:border-box}
+::selection{background:rgba(251,113,133,.26);color:#fff}
+:focus-visible{
+  outline:2px solid var(--accent)!important;
+  outline-offset:3px!important;
+}
+button,input,select,textarea{font:inherit}
+button{touch-action:manipulation}
+a{color:inherit}
+.hidden{display:none!important}
+
+/* App shell */
+#main-nav{
+  background:rgba(10,15,24,.78)!important;
+  border-color:var(--border)!important;
+  backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);
+  box-shadow:0 10px 35px rgba(0,0,0,.18);
+}
+#main-nav>div{
+  height:68px!important;
+}
+#main-nav .nav-links{
+  gap:4px!important;
+}
+#main-nav .nav-link{
+  position:relative;
+  min-height:42px;
+  padding:0 12px;
+  border:1px solid transparent;
+  border-radius:11px;
+  color:#94a3b8;
+  transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
+}
+#main-nav .nav-link:hover{
+  color:#f8fafc;
+  background:rgba(148,163,184,.08);
+  border-color:rgba(148,163,184,.1);
+  transform:translateY(-1px);
+}
+#main-nav .nav-link.active{
+  color:#ffe4e6;
+  background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(251,113,133,.07));
+  border-color:rgba(251,113,133,.18);
+}
+#main-nav .nav-link.active::after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:-8px;
+  height:2px;
+  border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+[data-template-id="nav-brand"]{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:-.03em;
+  font-size:1.3rem!important;
+  color:#fff!important;
+}
+[data-template-id="nav-brand"]::before{
+  content:"U";
+  display:inline-flex;
+  width:34px;
+  height:34px;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  color:#fff;
+  font-size:.95rem;
+  font-weight:800;
+  background:linear-gradient(135deg,#ef4444,#fb7185);
+  box-shadow:0 8px 24px rgba(239,68,68,.22);
+}
+#app{
+  width:100%;
+  max-width:1120px!important;
+  margin:0 auto;
+  padding-top:32px!important;
+  padding-bottom:42px!important;
+}
+#app>div{
+  animation:pageIn .34s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes pageIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Cards / surfaces */
+.card,
+.mobile-card{
+  background:
+    linear-gradient(180deg,rgba(24,34,49,.92),rgba(13,20,31,.92))!important;
+  border:1px solid var(--border)!important;
+  border-radius:var(--radius-md)!important;
+  box-shadow:var(--shadow-sm),inset 0 1px rgba(255,255,255,.02)!important;
+}
+.card:hover{
+  border-color:rgba(148,163,184,.2)!important;
+}
+.card.p-5,.card.p-6,.card.p-8{
+  box-shadow:var(--shadow-sm),inset 0 1px rgba(255,255,255,.025)!important;
+}
+.btn-primary,.btn-secondary,.btn-danger{
+  position:relative;
+  overflow:hidden;
+  border-radius:12px!important;
+  min-height:46px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#e11d48,#ef4444 55%,#fb7185)!important;
+  box-shadow:0 10px 26px rgba(239,68,68,.18)!important;
+}
+.btn-primary::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.17),transparent);
+  transform:translateX(-110%);
+  transition:transform .5s ease;
+}
+.btn-primary:hover::before{transform:translateX(110%)}
+.btn-primary:hover{
+  background:linear-gradient(135deg,#f43f5e,#ef4444 55%,#fb7185)!important;
+  transform:translateY(-1px);
+  box-shadow:0 14px 32px rgba(239,68,68,.24)!important;
+}
+.btn-secondary{
+  background:rgba(30,41,59,.66)!important;
+  border:1px solid rgba(148,163,184,.18)!important;
+  color:#e2e8f0!important;
+}
+.btn-secondary:hover{
+  background:rgba(51,65,85,.7)!important;
+  border-color:rgba(148,163,184,.3)!important;
+  transform:translateY(-1px);
+}
+.btn-danger{
+  background:linear-gradient(135deg,#b91c1c,#ef4444)!important;
+}
+.btn-danger:hover{transform:translateY(-1px)}
+.btn-primary:disabled,.btn-secondary:disabled,.btn-danger:disabled{
+  transform:none!important;
+  box-shadow:none!important;
+}
+
+/* Typography */
+#app h1,#app h2,#app h3{
+  letter-spacing:-.025em;
+}
+#app h1{line-height:1.05}
+.text-gray-50,.text-gray-100{color:#f8fafc!important}
+.text-gray-200{color:#e2e8f0!important}
+.text-gray-300{color:#cbd5e1!important}
+.text-gray-400{color:#94a3b8!important}
+.text-gray-500{color:#64748b!important}
+.text-red-400,.text-red-500{color:#fda4af!important}
+.text-blue-600,.text-blue-700{color:#93c5fd!important}
+.text-green-600{color:#6ee7b7!important}
+
+/* Forms */
+.input-field{
+  min-height:48px;
+  color:#f8fafc!important;
+  background:rgba(5,10,18,.58)!important;
+  border:1px solid rgba(148,163,184,.18)!important;
+  border-radius:12px!important;
+  padding:12px 14px!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025);
+}
+.input-field:hover{
+  border-color:rgba(148,163,184,.28)!important;
+}
+.input-field:focus{
+  border-color:rgba(251,113,133,.72)!important;
+  box-shadow:0 0 0 4px rgba(251,113,133,.10),inset 0 1px rgba(255,255,255,.04)!important;
+}
+.input-field::placeholder{color:#64748b!important}
+.form-label{
+  color:#f1f5f9!important;
+  margin-bottom:7px!important;
+}
+input[type="checkbox"],input[type="radio"]{
+  accent-color:#ef4444;
+}
+
+/* Table polish */
+.table-wrap,.timetable-scroll{
+  border-color:var(--border)!important;
+  background:rgba(4,9,16,.34);
+}
+table{min-width:760px}
+th{
+  background:rgba(15,23,42,.88)!important;
+  color:#94a3b8!important;
+  border-bottom:1px solid var(--border)!important;
+}
+td{
+  color:#e2e8f0!important;
+  border-bottom-color:rgba(148,163,184,.1)!important;
+}
+tr:nth-child(even) td{background:rgba(15,23,42,.38)!important}
+tr:hover td{background:rgba(51,65,85,.24)!important}
+
+/* Timetable */
+.timetable-grid{
+  background:rgba(10,16,25,.9)!important;
+}
+.timetable-grid .tt-header{
+  background:rgba(30,41,59,.9)!important;
+  color:#cbd5e1!important;
+  border-color:rgba(148,163,184,.13)!important;
+}
+.timetable-grid .tt-time-col{
+  background:rgba(4,9,16,.7)!important;
+  border-color:rgba(148,163,184,.13)!important;
+}
+.timetable-grid .timetable-day{
+  border-color:rgba(148,163,184,.1)!important;
+}
+.timetable-day .guide-line{border-top-color:rgba(148,163,184,.08)!important}
+.timetable-day .guide-line.hour{border-top-color:rgba(148,163,184,.16)!important}
+.tt-time-label{color:#64748b!important}
+.tt-block{
+  border-radius:9px!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.22)!important;
+  border-color:rgba(255,255,255,.25)!important;
+}
+.tt-tooltip{
+  background:rgba(15,23,42,.96)!important;
+  border-color:rgba(148,163,184,.22)!important;
+  box-shadow:var(--shadow-md)!important;
+  backdrop-filter:blur(12px);
+}
+
+/* Chips + misc badges */
+.chip{
+  background:rgba(239,68,68,.09)!important;
+  border-color:rgba(251,113,133,.2)!important;
+  color:#fecdd3!important;
+}
+.badge-hidden{
+  background:rgba(124,45,18,.5)!important;
+  border:1px solid rgba(251,146,60,.18);
+}
+
+/* Toast */
+.toast{
+  right:20px!important;
+  bottom:20px!important;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:50px;
+  padding:12px 16px!important;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px!important;
+  background:rgba(15,23,42,.95)!important;
+  box-shadow:var(--shadow-lg)!important;
+  backdrop-filter:blur(14px);
+  color:#f8fafc!important;
+}
+.toast::before{
+  content:"✓";
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  background:rgba(52,211,153,.16);
+  color:#6ee7b7;
+  font-weight:800;
+}
+.toast.toast-error{background:rgba(69,10,10,.96)!important}
+.toast.toast-error::before{content:"!" ;background:rgba(248,113,113,.16);color:#fca5a5}
+.toast.toast-success::before{content:"✓"}
+
+/* Mobile navigation */
+.bottom-nav{
+  padding:8px max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-bottom))!important;
+  background:rgba(8,12,20,.92)!important;
+  border-top:1px solid var(--border)!important;
+  backdrop-filter:blur(20px) saturate(140%);
+  box-shadow:0 -12px 30px rgba(0,0,0,.22);
+}
+.bottom-nav-item{
+  gap:3px;
+  min-height:52px;
+  border-radius:12px;
+  font-weight:600;
+  transition:background .16s ease,color .16s ease;
+}
+.bottom-nav-item.active{
+  color:#fecdd3!important;
+  background:rgba(239,68,68,.10);
+}
+.bottom-nav-item:hover{color:#fff!important}
+
+/* Landing */
+.u-landing{
+  position:relative;
+  min-height:calc(100dvh - 100px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:48px 0 24px;
+}
+.u-landing::before{
+  content:"";
+  position:absolute;
+  width:340px;height:340px;
+  right:-100px;top:8%;
+  background:radial-gradient(circle,rgba(239,68,68,.18),transparent 70%);
+  filter:blur(8px);
+  pointer-events:none;
+}
+.u-hero{
+  position:relative;
+  max-width:780px;
+  margin:0 auto;
+  text-align:center;
+}
+.u-logo{
+  display:inline-flex;
+  width:82px;height:82px;
+  align-items:center;justify-content:center;
+  border-radius:24px;
+  font-size:32px;font-weight:800;
+  color:#fff;
+  background:linear-gradient(145deg,#be123c,#ef4444 48%,#fb7185);
+  box-shadow:0 22px 55px rgba(239,68,68,.22);
+  transform:rotate(-3deg);
+}
+.u-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:22px;
+  padding:7px 11px;
+  border-radius:999px;
+  color:#fecdd3;
+  background:rgba(239,68,68,.08);
+  border:1px solid rgba(251,113,133,.18);
+  font-size:.78rem;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.u-hero h1{
+  margin-top:18px;
+  font-size:clamp(3.25rem,8vw,5.8rem);
+  font-weight:800;
+  letter-spacing:-.06em;
+}
+.u-hero h1 span{
+  background:linear-gradient(120deg,#fff 25%,#fecdd3 70%,#fb7185);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.u-hero p{
+  max-width:700px;
+  margin-left:auto;margin-right:auto;
+}
+.u-hero-sub{
+  margin-top:16px;
+  color:#cbd5e1;
+  font-size:clamp(1rem,2.3vw,1.22rem);
+  line-height:1.7;
+}
+.u-actions{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:30px;
+}
+.u-feature-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  max-width:980px;
+  margin:62px auto 0;
+}
+.u-feature{
+  position:relative;
+  overflow:hidden;
+  padding:22px;
+  text-align:left;
+  min-height:185px;
+}
+.u-feature::after{
+  content:"";
+  position:absolute;
+  width:120px;height:120px;
+  top:-60px;right:-40px;
+  background:radial-gradient(circle,rgba(251,113,133,.1),transparent 70%);
+}
+.u-feature-icon{
+  width:46px;height:46px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:13px;
+  color:#fecdd3;
+  background:rgba(239,68,68,.1);
+  border:1px solid rgba(251,113,133,.15);
+}
+.u-mini-stat{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  margin-top:18px;
+}
+.u-stat{
+  padding:11px 12px;
+  text-align:left;
+  border-radius:13px;
+  background:rgba(15,23,42,.45);
+  border:1px solid rgba(148,163,184,.1);
+}
+.u-stat strong{display:block;font-size:.9rem;color:#f8fafc}
+.u-stat span{display:block;margin-top:2px;font-size:.7rem;color:#64748b}
+
+/* Auth */
+.u-auth-wrap{
+  min-height:calc(100dvh - 130px);
+  display:grid;
+  place-items:center;
+  padding:32px 0;
+}
+.u-auth-card{
+  width:100%;
+  max-width:470px;
+  padding:30px;
+}
+.u-auth-title{font-size:clamp(2rem,5vw,2.7rem)!important}
+.u-auth-icon{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;
+  background:linear-gradient(135deg,#ef4444,#fb7185);
+  box-shadow:0 12px 26px rgba(239,68,68,.18);
+}
+.u-auth-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;
+  color:#64748b;font-size:.76rem;
+}
+.u-auth-divider::before,.u-auth-divider::after{
+  content:"";height:1px;flex:1;background:var(--border)
+}
+.u-back-link{
+  display:inline-flex;align-items:center;gap:7px;
+  color:#94a3b8;
+  font-size:.88rem;font-weight:600;
+}
+.u-back-link:hover{color:#f8fafc}
+
+/* Section headers */
+.u-section-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:24px;
+}
+.u-section-kicker{
+  color:#fb7185;
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  font-weight:800;
+}
+.u-section-title{margin-top:4px!important;font-size:clamp(1.65rem,3vw,2.2rem)!important}
+.u-section-desc{margin-top:6px;color:#94a3b8;font-size:.92rem}
+
+/* Dashboard */
+.u-dashboard-grid{
+  display:grid!important;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:14px!important;
+  margin-top:24px!important;
+}
+.u-dashboard-card{
+  grid-column:span 4;
+  min-height:170px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:20px!important;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.u-dashboard-card:nth-child(-n+2){grid-column:span 6}
+.u-dashboard-card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(251,113,133,.24)!important;
+  box-shadow:var(--shadow-md)!important;
+}
+.u-dashboard-card .u-card-icon{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border-radius:13px;
+  color:#fecdd3;
+  background:rgba(239,68,68,.09);
+}
+.u-card-arrow{
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  margin-left:auto;
+  border-radius:10px;
+  color:#94a3b8;
+  background:rgba(148,163,184,.06);
+}
+
+/* Generic section utility */
+.u-panel{
+  background:linear-gradient(180deg,rgba(24,34,49,.84),rgba(13,20,31,.88));
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:var(--shadow-sm);
+}
+.u-muted{color:#94a3b8}
+.u-divider{height:1px;background:var(--border)}
+.u-empty{
+  padding:46px 22px;
+  text-align:center;
+  border:1px dashed rgba(148,163,184,.18);
+  border-radius:16px;
+  background:rgba(15,23,42,.28);
+}
+.u-empty-icon{
+  width:52px;height:52px;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:16px;
+  color:#94a3b8;
+  background:rgba(148,163,184,.06);
+  border:1px solid rgba(148,163,184,.08);
+}
+
+/* Modal upgrade without touching existing modal DOM */
+[id^="uplanner-"][id$="-modal"]{
+  padding:16px!important;
+}
+[id^="uplanner-"][id$="-modal"]>.relative.card{
+  max-height:min(88dvh,820px);
+  overflow:auto;
+  border-color:rgba(148,163,184,.18)!important;
+  box-shadow:0 35px 90px rgba(0,0,0,.55)!important;
+}
+[id^="uplanner-"][id$="-modal"]>.absolute{
+  background:rgba(2,6,23,.76)!important;
+  backdrop-filter:blur(9px);
+}
+
+/* Loading + connection state */
+.loading-overlay{
+  min-height:220px;
+  color:#94a3b8!important;
+  flex-direction:column;
+}
+.spinner{
+  width:20px!important;height:20px!important;
+  border:2px solid rgba(148,163,184,.2)!important;
+  border-top-color:#fb7185!important;
+}
+
+/* Smooth scrolling containers */
+.table-wrap,.timetable-scroll{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(148,163,184,.35) transparent;
+}
+.table-wrap::-webkit-scrollbar,.timetable-scroll::-webkit-scrollbar{height:8px;width:8px}
+.table-wrap::-webkit-scrollbar-thumb,.timetable-scroll::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,.28);border-radius:999px;
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  #main-nav .nav-link{padding:0 9px}
+  .u-feature-grid{grid-template-columns:1fr;max-width:700px}
+  .u-feature{min-height:0}
+}
+@media (max-width: 767px){
+  body{padding-bottom:78px}
+  #app{padding:22px 14px 30px!important}
+  #main-nav{display:none!important}
+  .bottom-nav{display:flex!important}
+  .u-landing{min-height:auto;padding:36px 0 10px}
+  .u-hero h1{font-size:clamp(3rem,17vw,4.4rem)}
+  .u-logo{width:72px;height:72px;border-radius:20px;font-size:28px}
+  .u-actions{flex-direction:column}
+  .u-actions .btn-primary,.u-actions .btn-secondary{width:100%}
+  .u-mini-stat{grid-template-columns:1fr}
+  .u-dashboard-grid{grid-template-columns:1fr!important}
+  .u-dashboard-card,.u-dashboard-card:nth-child(-n+2){grid-column:span 1}
+  .u-section-head{align-items:flex-start;flex-direction:column}
+  .u-auth-wrap{min-height:auto;padding:14px 0 30px}
+  .u-auth-card{padding:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+}
+
+
+.skip-link{
+  position:fixed;left:14px;top:14px;z-index:10000;
+  transform:translateY(-180%);padding:10px 14px;border-radius:10px;
+  background:#fff;color:#0f172a;font-weight:800;box-shadow:0 12px 30px rgba(0,0,0,.3);
+  transition:transform .18s ease;
+}
+.skip-link:focus{transform:translateY(0)}
+
 </style>
  </head>
  <body data-template-id="__page-root" class="min-h-screen">
-  <nav id="main-nav" class="hidden border-b sticky top-0 z-50" style="background:var(--card-bg);border-color:var(--card-border)">
-   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14"><span data-template-id="nav-brand" class="canva-text font-bold text-lg cursor-pointer" style="color: rgb(220, 38, 38); font-weight: 700; font-style: normal; font-size: 22px;" onclick="showView('dashboard')">UPlanner</span>
-    <div class="nav-links flex items-center gap-1 flex-wrap"><span class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:16px;height:16px"></i><span class="hidden md:inline">Home</span></span><span class="nav-link" data-nav="search">
-        
-        <span
-        class="nav-link"
-        data-nav="people"
-        >
-        <i
-            data-lucide="users-round"
-            style="width:16px;height:16px"
-        ></i>
-
-        <span class="hidden md:inline">
-            People
-        </span>
-        </span>
-        
-        
-        
-        <i data-lucide="search" style="width:16px;height:16px"></i><span class="hidden md:inline">Search</span></span><span class="nav-link" data-nav="own-schedule"><i data-lucide="calendar" style="width:16px;height:16px"></i><span class="hidden md:inline">Schedule</span></span><span class="nav-link" data-nav="compare"><i data-lucide="git-compare" style="width:16px;height:16px"></i><span class="hidden md:inline">Compare</span></span><span class="nav-link" data-nav="groups"><i data-lucide="users" style="width:16px;height:16px"></i><span class="hidden md:inline">Groups</span></span><span class="nav-link" data-nav="profile"><i data-lucide="user" style="width:16px;height:16px"></i><span class="hidden md:inline">Profile</span></span><span class="nav-link" data-nav="logout" style="color:#f87171"><i data-lucide="log-out" style="width:16px;height:16px"></i><span class="hidden md:inline">Logout</span></span>
+  <a class="skip-link" href="#app">Skip to main content</a>
+<nav id="main-nav" class="hidden" aria-label="Primary navigation">
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between gap-5">
+    <button type="button" data-template-id="nav-brand" class="font-bold cursor-pointer" aria-label="Go to dashboard" onclick="showView('dashboard')">UPlanner</button>
+    <div class="nav-links flex items-center gap-1 flex-wrap" role="navigation">
+      <button type="button" class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
+      <button type="button" class="nav-link" data-nav="people"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
+      <button type="button" class="nav-link" data-nav="search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
+      <button type="button" class="nav-link" data-nav="own-schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
+      <button type="button" class="nav-link" data-nav="compare"><i data-lucide="git-compare-arrows" aria-hidden="true"></i><span>Compare</span></button>
+      <button type="button" class="nav-link" data-nav="groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
+      <button type="button" class="nav-link" data-nav="profile"><i data-lucide="user-round" aria-hidden="true"></i><span>Profile</span></button>
+      <button type="button" class="nav-link" data-nav="logout" style="color:#fda4af"><i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span></button>
     </div>
-   </div>
-  </nav>
-  <div id="bottom-nav" class="bottom-nav hidden">
-   <div class="bottom-nav-item" data-nav="dashboard"><i data-lucide="layout-dashboard" style="width:20px;height:20px"></i>Home
-   </div>
+  </div>
+</nav>
+<div id="bottom-nav" class="bottom-nav hidden" role="navigation" aria-label="Mobile navigation">
+  <button type="button" class="bottom-nav-item" data-nav="dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="people"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="own-schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="compare"><i data-lucide="git-compare-arrows" aria-hidden="true"></i><span>Compare</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
+</div>
    <div class="bottom-nav-item" data-nav="search">
     <div
   class="bottom-nav-item"
@@ -272,7 +966,7 @@ async function refreshData() {
 
 function renderConnectionError() {
   const app = document.getElementById('app');
-  app.innerHTML = `<div class="card p-8 max-w-md mx-auto mt-16 text-center"><h2 class="text-xl font-bold text-red-400">Unable to connect</h2><p class="text-gray-300 mt-2">Could not connect to the UPlanner backend.</p><button class="btn-primary mt-4" onclick="retryConnection()">Retry</button></div>`;
+  app.innerHTML = `<div class="u-auth-wrap"><div class="card u-auth-card text-center"><div class="u-auth-icon mx-auto"><i data-lucide="wifi-off" style="width:22px;height:22px"></i></div><h2 class="text-2xl font-bold text-gray-50 mt-5">UPlanner is offline</h2><p class="text-gray-400 mt-2 leading-6">We couldn't reach the backend right now. Your interface is fine—the connection just needs another try.</p><button class="btn-primary w-full mt-6" onclick="retryConnection()"><i data-lucide="refresh-cw" style="width:17px;height:17px"></i> Try again</button></div></div>`; lucide.createIcons();
 }
 
 function retryConnection() {
@@ -1360,41 +2054,172 @@ const nav = document.getElementById('main-nav');
 const bottomNav = document.getElementById('bottom-nav');
 
 function showView(name, params) {
-  if (currentView !== name || JSON.stringify(currentParams) !== JSON.stringify(params)) { previousView = currentView; previousParams = currentParams; }
-  currentView = name; currentParams = params;
+  if (currentView !== name || JSON.stringify(currentParams) !== JSON.stringify(params)) {
+    previousView = currentView;
+    previousParams = currentParams;
+  }
+  currentView = name;
+  currentParams = params;
   if (!sdkReady && !sdkError) return;
   render(params);
+  window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 function goBack(fallback, fallbackParams) { if (previousView && previousView !== 'landing') showView(previousView, previousParams); else showView(fallback || 'dashboard', fallbackParams); }
 
 function render(params) {
   if (!sdkReady) return;
-  const session = getSession(); const loggedIn = !!session;
-  nav.classList.toggle('hidden', !loggedIn); bottomNav.classList.toggle('hidden', !loggedIn);
-  document.querySelectorAll('[data-nav]').forEach(el => { el.classList.toggle('active', el.dataset.nav === currentView); });
+  const session = getSession();
+  const loggedIn = !!session;
+  nav.classList.toggle('hidden', !loggedIn);
+  bottomNav.classList.toggle('hidden', !loggedIn);
+  document.querySelectorAll('[data-nav]').forEach(el => {
+    el.classList.toggle('active', el.dataset.nav === currentView);
+    if (el.dataset.nav === currentView) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
+  });
   const views = { landing, signup, login, 'profile-setup': profileSetup, dashboard, people: peopleView, 'own-schedule': ownSchedule, search: searchView, 'view-schedule': viewSchedule, 'edit-schedule': editSchedule, compare: compareView, profile: profileView, 'view-profile': viewProfileView, groups: groupsView, 'group-detail': groupDetailView, 'how-to-use': howToUseView };
-  app.innerHTML = ''; const el = (views[currentView] || landing)(params);
-  if (typeof el === 'string') app.innerHTML = el; else if (el) app.appendChild(el);
+  app.innerHTML = '';
+  const el = (views[currentView] || landing)(params);
+  if (typeof el === 'string') app.innerHTML = el;
+  else if (el) app.appendChild(el);
   lucide.createIcons();
+  const titles = {
+    landing:'UPlanner — Plan better together',
+    dashboard:'UPlanner — Dashboard',
+    people:'UPlanner — People',
+    search:'UPlanner — Schedule Directory',
+    'own-schedule':'UPlanner — My Schedule',
+    compare:'UPlanner — Compare Schedules',
+    groups:'UPlanner — Groups',
+    profile:'UPlanner — My Profile',
+    'view-profile':'UPlanner — Profile',
+    'view-schedule':'UPlanner — Schedule',
+    'edit-schedule':'UPlanner — Edit Schedule',
+    'profile-setup':'UPlanner — Complete Profile',
+    signup:'UPlanner — Create Account',
+    login:'UPlanner — Log In',
+    'how-to-use':'UPlanner — How It Works'
+  };
+  document.title = titles[currentView] || 'UPlanner';
 }
 
 document.addEventListener('click', e => { const nl = e.target.closest('[data-nav]'); if (nl) { const v = nl.dataset.nav; if (v === 'logout') { apiRequest('/api/auth',{method:'DELETE'}).finally(()=>{ clearSession(); showHiddenPeople = false; showView('landing'); }); } else showView(v); } });
 
-function toast(msg, type) { const t = document.createElement('div'); t.className = 'toast' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
-function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function esc(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function toast(msg, type) {
+  document.querySelectorAll('.toast').forEach(node => node.remove());
+  const t = document.createElement('div');
+  t.className = 'toast' + (type === 'error' ? ' toast-error' : type === 'success' ? ' toast-success' : '');
+  t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  t.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  window.setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+    window.setTimeout(() => t.remove(), 180);
+  }, 3000);
+}
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const BLOCK_COLORS = ['#fbbf24', '#60a5fa', '#818cf8', '#a78bfa', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#10b981', '#06b6d4'];
-const PERSON_COLORS = BLOCK_COLORS;
+function landing() {
+  const session = getSession();
+  if (session) { showView('dashboard'); return ''; }
+  return `
+    <section class="u-landing" aria-labelledby="landing-title">
+      <div class="u-hero">
+        <div class="u-logo" aria-hidden="true">U</div>
+        <div class="u-eyebrow"><i data-lucide="sparkles" style="width:14px;height:14px"></i> Your schedule, organized</div>
+        <h1 id="landing-title"><span>UPlanner</span></h1>
+        <p class="u-hero-sub">Find time that works for everyone—without bouncing between spreadsheets, screenshots, and group chats.</p>
+        <div class="u-actions">
+          <button class="btn-primary text-base px-7" onclick="showView('signup')"><i data-lucide="arrow-right" style="width:18px;height:18px"></i> Get started</button>
+          <button class="btn-secondary text-base px-7" onclick="showView('login')"><i data-lucide="log-in" style="width:18px;height:18px"></i> Log in</button>
+        </div>
+        <button class="u-back-link mt-5 mx-auto" onclick="showView('how-to-use')"><i data-lucide="circle-help" style="width:17px;height:17px"></i> See how UPlanner works</button>
+      </div>
+      <div class="u-feature-grid">
+        <article class="card u-feature">
+          <div class="u-feature-icon"><i data-lucide="calendar-days" style="width:22px;height:22px"></i></div>
+          <h2 class="font-bold text-lg text-gray-50 mt-4">One schedule</h2>
+          <p class="text-sm text-gray-400 mt-2 leading-6">Keep classes, days, and time blocks in one clean view that is easy to update.</p>
+          <div class="u-mini-stat">
+            <div class="u-stat"><strong>Organize</strong><span>classes + blocks</span></div>
+            <div class="u-stat"><strong>Review</strong><span>week at a glance</span></div>
+            <div class="u-stat"><strong>Update</strong><span>when things change</span></div>
+          </div>
+        </article>
+        <article class="card u-feature">
+          <div class="u-feature-icon"><i data-lucide="users-round" style="width:22px;height:22px"></i></div>
+          <h2 class="font-bold text-lg text-gray-50 mt-4">Find your people</h2>
+          <p class="text-sm text-gray-400 mt-2 leading-6">Discover students using shared academic details, then keep useful connections organized in groups.</p>
+          <div class="u-mini-stat">
+            <div class="u-stat"><strong>Search</strong><span>people + profiles</span></div>
+            <div class="u-stat"><strong>Filter</strong><span>school + degree</span></div>
+            <div class="u-stat"><strong>Group</strong><span>keep it tidy</span></div>
+          </div>
+        </article>
+        <article class="card u-feature">
+          <div class="u-feature-icon"><i data-lucide="git-compare-arrows" style="width:22px;height:22px"></i></div>
+          <h2 class="font-bold text-lg text-gray-50 mt-4">Find free time</h2>
+          <p class="text-sm text-gray-400 mt-2 leading-6">Compare schedules visually and spot the windows where everyone is actually available.</p>
+          <div class="u-mini-stat">
+            <div class="u-stat"><strong>Compare</strong><span>multiple people</span></div>
+            <div class="u-stat"><strong>Spot</strong><span>common gaps</span></div>
+            <div class="u-stat"><strong>Plan</strong><span>study or hangouts</span></div>
+          </div>
+        </article>
+      </div>
+    </section>`;
+}
 
-// ===== AUTH =====
-function landing() { const session = getSession(); if (session) { showView('dashboard'); return ''; } return `<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12"><div class="text-center max-w-2xl mx-auto"><div class="mb-8 inline-block"><div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg"><svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div></div><h1 data-template-id="landing-title" class="text-5xl sm:text-6xl font-bold mb-4">UPlanner</h1><p class="text-xl text-gray-300 mb-3 leading-relaxed">Find the time that works for everyone.</p><p class="text-lg text-gray-400 mb-10 leading-relaxed">Store your schedule, find friends, and instantly discover common free time to study or hang out.</p><div class="flex flex-col sm:flex-row justify-center gap-4 mb-12"><button class="btn-primary text-lg px-8 py-4 w-full sm:w-auto shadow-lg hover:shadow-xl" onclick="showView('signup')">Get Started</button><button class="btn-secondary text-lg px-8 py-4 w-full sm:w-auto" onclick="showView('login')">Log In</button></div><button class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition" onclick="showView('how-to-use')"><i data-lucide="help-circle" style="width:18px;height:18px"></i> Learn How It Works</button></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-16 max-w-3xl mx-auto"><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-3"><i data-lucide="calendar" style="width:24px;height:24px;color:var(--primary)"></i></div><h3 class="font-bold text-gray-100 mb-2">Your Schedule</h3><p class="text-sm text-gray-300">Add all your classes in one place and keep them up to date.</p></div><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center mb-3"><i data-lucide="search" style="width:24px;height:24px;color:var(--accent)"></i></div><h3 class="font-bold text-gray-100 mb-2">Find Friends</h3><p class="text-sm text-gray-300">Discover and view schedules from other students at your school.</p></div><div class="card p-6 text-left"><div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-3"><i data-lucide="git-compare" style="width:24px;height:24px;color:var(--success)"></i></div><h3 class="font-bold text-gray-100 mb-2">Find Free Time</h3><p class="text-sm text-gray-300">Compare schedules and see exactly when everyone is available.</p></div></div></div>`; }
+function signup(){
+  return `
+    <div class="u-auth-wrap">
+      <section class="card u-auth-card" aria-labelledby="signup-heading">
+        <div class="flex items-center justify-between gap-4">
+          <div class="u-auth-icon"><i data-lucide="user-plus" style="width:22px;height:22px"></i></div>
+          <button class="u-back-link" onclick="showView('landing')"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Back</button>
+        </div>
+        <div class="mt-7">
+          <p class="u-section-kicker">Join UPlanner</p>
+          <h2 id="signup-heading" data-template-id="signup-heading" class="u-auth-title text-3xl font-bold text-gray-50 mt-2">Create your account</h2>
+          <p class="text-gray-400 mt-2 leading-6">Pick a nickname. You can complete the rest of your profile after signing up.</p>
+        </div>
+        <div class="mt-7">
+          <label class="form-label" for="su-input">Nickname</label>
+          <input id="su-input" class="input-field" autocomplete="username" maxlength="40" placeholder="e.g. jednoche" onkeydown="if(event.key==='Enter')doSignup()">
+          <p id="su-err" class="text-red-400 text-sm mt-2 hidden font-medium" role="alert"></p>
+        </div>
+        <button id="su-btn" class="btn-primary w-full mt-5" onclick="doSignup()"><i data-lucide="arrow-up-right" style="width:17px;height:17px"></i> Create account</button>
+        <div class="u-auth-divider"><span>Already have an account?</span></div>
+        <button class="btn-secondary w-full" onclick="showView('login')">Log in instead</button>
+      </section>
+    </div>`;
+}
 
-function signup() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="signup-heading" class="text-3xl font-bold">Create Account</h2><p class="mt-2 text-gray-300">Choose a nickname to get started.</p></div><div class="mt-8"><label class="form-label" for="su-input">Nickname</label><input id="su-input" class="input-field" placeholder="Enter your nickname"><p id="su-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="su-btn" class="btn-primary w-full mt-6" onclick="doSignup()">Create Account</button><p class="mt-6 text-center text-sm text-gray-400">Already have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('login')">Log In</a></p></div>`; }
-
-function login() { return `<div class="max-w-md mx-auto card p-8 my-12 shadow-xl"><div class="mb-6"><h2 data-template-id="login-heading" class="text-3xl font-bold">Welcome Back</h2><p class="mt-2 text-gray-300">Enter your nickname to access your schedules.</p></div><div class="mt-8"><label class="form-label" for="li-input">Nickname</label><input id="li-input" class="input-field" placeholder="Enter your nickname"><p id="li-err" class="text-red-600 text-sm mt-2 hidden font-medium"></p></div><button id="li-btn" class="btn-primary w-full mt-6" onclick="doLogin()">Log In</button><p class="mt-6 text-center text-sm text-gray-400">Don't have an account? <a class="text-blue-600 cursor-pointer font-semibold hover:text-blue-700" onclick="showView('signup')">Create one</a></p></div>`; }
-
+function login(){
+  return `
+    <div class="u-auth-wrap">
+      <section class="card u-auth-card" aria-labelledby="login-heading">
+        <div class="flex items-center justify-between gap-4">
+          <div class="u-auth-icon"><i data-lucide="log-in" style="width:22px;height:22px"></i></div>
+          <button class="u-back-link" onclick="showView('landing')"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Back</button>
+        </div>
+        <div class="mt-7">
+          <p class="u-section-kicker">Welcome back</p>
+          <h2 id="login-heading" data-template-id="login-heading" class="u-auth-title text-3xl font-bold text-gray-50 mt-2">Log in to UPlanner</h2>
+          <p class="text-gray-400 mt-2 leading-6">Use the nickname you created your UPlanner account with.</p>
+        </div>
+        <div class="mt-7">
+          <label class="form-label" for="li-input">Nickname</label>
+          <input id="li-input" class="input-field" autocomplete="username" maxlength="40" placeholder="Enter your nickname" onkeydown="if(event.key==='Enter')doLogin()">
+          <p id="li-err" class="text-red-400 text-sm mt-2 hidden font-medium" role="alert"></p>
+        </div>
+        <button id="li-btn" class="btn-primary w-full mt-5" onclick="doLogin()"><i data-lucide="log-in" style="width:17px;height:17px"></i> Log in</button>
+        <div class="u-auth-divider"><span>New here?</span></div>
+        <button class="btn-secondary w-full" onclick="showView('signup')">Create an account</button>
+      </section>
+    </div>`;
+}
 
 async function doSignup() {
   const inp = document.getElementById('su-input'), err = document.getElementById('su-err'), btn = document.getElementById('su-btn');
@@ -1701,12 +2526,50 @@ async function saveProfileSetup() {
 
 // ===== DASHBOARD =====
 function dashboard() {
-  const session = getSession(); if (!session) { showView('landing'); return ''; }
-  const user = findUserById(session.userId); const displayName = user && user.full_name ? user.full_name : session.username;
-  return `<div><h1 class="text-2xl font-bold text-gray-50">Welcome, ${escHtml(displayName)}!</h1><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">${dashCard('search', 'Search Schedules', 'Find and view saved schedules.', 'search')}${dashCard('own-schedule', 'My Schedule', 'Add or update your class schedule.', 'edit-3')}${dashCard('compare', 'Compare', 'Find free time between people.', 'git-compare')}${dashCard('groups', 'Groups & People', 'Organize people into groups.', 'users')}${dashCard('profile', 'My Profile', 'View and edit your profile.', 'user')}</div></div>`;
+  const session = getSession();
+  if (!session) { showView('landing'); return ''; }
+  const user = findUserById(session.userId);
+  const displayName = user && user.full_name ? user.full_name : session.username;
+  const firstName = String(displayName || 'there').trim().split(/\s+/)[0];
+  return `
+    <section aria-labelledby="dashboard-title">
+      <div class="u-section-head">
+        <div>
+          <p class="u-section-kicker">Dashboard</p>
+          <h1 id="dashboard-title" class="u-section-title text-2xl font-bold text-gray-50">Welcome back, ${escHtml(firstName)}.</h1>
+          <p class="u-section-desc">Everything you need to plan your week is right here.</p>
+        </div>
+        <button class="btn-primary" onclick="showView('own-schedule')"><i data-lucide="plus" style="width:17px;height:17px"></i> Add a class</button>
+      </div>
+      <div class="u-dashboard-grid">
+        ${dashCard('search', 'Search schedules', 'Find classmates, profiles, and saved schedules.', 'search', 'Explore')}
+        ${dashCard('own-schedule', 'My schedule', 'Build and maintain your weekly class timetable.', 'calendar-days', 'Open schedule')}
+        ${dashCard('compare', 'Compare time', 'Find common free windows between people.', 'git-compare-arrows', 'Compare schedules')}
+        ${dashCard('people', 'Find people', 'Discover people with similar academic backgrounds.', 'users-round', 'Browse people')}
+        ${dashCard('groups', 'Groups', 'Organize people you work or hang out with.', 'users', 'Manage groups')}
+        ${dashCard('profile', 'My profile', 'Update your details, visibility, and preferences.', 'user-round', 'View profile')}
+      </div>
+    </section>`;
 }
-function dashCard(view, title, desc, icon) { return `<div class="card p-5 cursor-pointer hover:border-red-800 transition border border-transparent" onclick="showView('${view}')"><div class="flex items-center gap-3 mb-2"><i data-lucide="${icon}" style="width:22px;height:22px;color:var(--accent)"></i><h3 class="font-semibold text-gray-50">${title}</h3></div><p class="text-sm text-gray-300">${desc}</p></div>`; }
-
+function dashCard(view, title, desc, icon, action) {
+  return `
+    <article class="card u-dashboard-card" onclick="showView('${view}')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')showView('${view}')">
+      <div>
+        <div class="flex items-start gap-3">
+          <div class="u-card-icon"><i data-lucide="${icon}" style="width:21px;height:21px"></i></div>
+          <div class="flex-1 min-w-0">
+            <h2 class="font-bold text-gray-50 text-base">${escHtml(title)}</h2>
+            <p class="text-sm text-gray-400 mt-1 leading-6">${escHtml(desc)}</p>
+          </div>
+          <div class="u-card-arrow"><i data-lucide="arrow-up-right" style="width:16px;height:16px"></i></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-white/5">
+        <span class="text-xs font-semibold text-gray-500">${escHtml(action)}</span>
+        <i data-lucide="chevron-right" style="width:15px;height:15px;color:#64748b"></i>
+      </div>
+    </article>`;
+}
 // ===== HOW TO USE =====
 function howToUseView() {
   const session = getSession(); const backBtn = session ? `<button class="btn-secondary" onclick="showView('dashboard')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button>` : `<button class="btn-secondary" onclick="showView('landing')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button>`;
@@ -3388,6 +4251,21 @@ document.addEventListener('click', e => { if (!e.target.closest('.tt-block')) do
 
 // CSV import intentionally removed from the browser.
 // Existing CSV data will be migrated separately after the frontend/backend are verified.
+
+/* Global interaction helpers */
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    const tooltip = document.getElementById('tt-tooltip');
+    if (tooltip) tooltip.classList.add('hidden');
+    document.querySelectorAll('[id^="uplanner-"][id$="-modal"]').forEach(modal => {
+      if (modal && !modal.dataset.required) modal.remove();
+    });
+  }
+});
+window.addEventListener('resize', () => {
+  document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+});
+document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
 
 // ===== INIT =====
 initializeDataLayer();
