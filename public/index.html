@@ -107,6 +107,8 @@ select.input-field{appearance:auto}
   <div id="tt-tooltip" class="tt-tooltip hidden"></div>
   <script>
 lucide.createIcons();
+
+
 const CURRENT_APP_VERSION = '2.0.0';
 const CURRENT_PRIVACY_VERSION = '2.0';
 
@@ -119,82 +121,16 @@ let onboardingState = {
 
 let appVersionInfo = null;
 let onboardingRunning = false;
-// ===== CENTRALIZED STATE =====
-let allData = [];
-async function refreshData(options = {}) {
-    const {
-        rerender = true
-    } = options;
-
-    try {
-        const response = await fetch('/api/bootstrap', {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(
-                `Bootstrap failed: ${response.status}`
-            );
-        }
-
-        const payload = await response.json();
-
-        if (!Array.isArray(payload.records)) {
-            throw new Error(
-                'Bootstrap response does not contain records.'
-            );
-        }
-
-        // This matches your actual /api/bootstrap response.
-        allData = payload.records;
-        onboardingState =
-            payload.onboarding || {
-                privacy_completed_version: null,
-                people_discovery_completed_version: null,
-                visibility_setup_completed_version: null,
-                whats_new_version: null
-            };
-
-        appVersionInfo =
-            payload.app_version || null;
-        
-        render(currentParams);
-        
-        setTimeout(() => {
-            runOnboarding();
-        }, 300);
-
-        // Keep session information available to the frontend.
-        if (payload.session) {
-            window.uplannerSession = payload.session;
-        }
-
-        if (rerender) {
-            render(currentParams);
-        }
-
-        return {
-            isOk: true,
-            data: payload
-        };
-
-    } catch (error) {
-        console.error('[UPlanner] refreshData failed:', error);
-
-        return {
-            isOk: false,
-            error
-        };
-    }
-}
 let sdkReady = false;
 let sdkError = false;
 let sdkInitializing = false;
 let sdkInitialized = false;
+
+// ===== CENTRALIZED STATE =====
+let allData = [];
+
+
+
 
 let currentView = 'landing';
 let currentParams = null;
@@ -207,69 +143,7 @@ function logDataError(operation, record, result) {
   const msg = result && result.error ? result.error.message || String(result.error) : 'Unknown error';
   console.error(`[DataError] ${operation}:`, msg, record);
 }
-async function refreshData() {
-    try {
-        const res = await fetch('/api/bootstrap', {
-            credentials: 'include'
-        });
 
-        if (!res.ok) {
-            console.error('Failed to refresh data:', res.status);
-            return false;
-        }
-
-        const data = await res.json();
-
-        allData = [];
-
-        if (data.users) {
-            allData.push(...data.users.map(u => ({
-                type: 'user',
-                ...u
-            })));
-        }
-
-        if (data.schedules) {
-            allData.push(...data.schedules.map(s => ({
-                type: 'schedule',
-                ...s
-            })));
-        }
-
-        if (data.entries) {
-            allData.push(...data.entries.map(e => ({
-                type: 'entry',
-                ...e
-            })));
-        }
-
-        if (data.groups) {
-            allData.push(...data.groups.map(g => ({
-                type: 'group',
-                ...g
-            })));
-        }
-
-        if (data.group_members) {
-            allData.push(...data.group_members.map(gm => ({
-                type: 'group_member',
-                ...gm
-            })));
-        }
-
-        if (data.preferences) {
-            allData.push(...data.preferences.map(p => ({
-                type: 'user_preference',
-                ...p
-            })));
-        }
-
-        return true;
-    } catch (err) {
-        console.error('refreshData failed:', err);
-        return false;
-    }
-}
 async function apiRequest(url, options = {}) {
   const response = await fetch(url, {
     credentials: 'include',
@@ -288,30 +162,69 @@ async function apiRequest(url, options = {}) {
 }
 
 function applyBootstrap(data) {
-  allData = Array.isArray(data.records) ? data.records : [];
+  // Load the normal UPlanner records.
+  allData = Array.isArray(data.records)
+    ? data.records
+    : [];
+
+  // Update session.
   if (data.session) {
-    setSession(data.session.userId, data.session.username);
+    setSession(
+      data.session.userId,
+      data.session.username
+    );
   } else {
     clearSession();
   }
+
+  // Load V2 onboarding state.
+  onboardingState =
+    data.onboarding || {
+      privacy_completed_version: null,
+      people_discovery_completed_version: null,
+      visibility_setup_completed_version: null,
+      whats_new_version: null
+    };
+
+  // Load current app version information.
+  appVersionInfo =
+    data.app_version || null;
+
   sdkReady = true;
   sdkError = false;
   sdkInitialized = true;
+
   render(currentParams);
 }
-
 async function initializeDataLayer() {
   if (sdkInitializing) return;
+
   sdkInitializing = true;
   sdkError = false;
+
   try {
-    const data = await apiRequest('/api/bootstrap');
+    const data =
+      await apiRequest('/api/bootstrap');
+
     applyBootstrap(data);
+
+    // Only run onboarding after the initial
+    // application load.
+    setTimeout(() => {
+      runOnboarding();
+    }, 300);
+
   } catch (e) {
-    console.error('[Backend] Failed to load UPlanner data:', e);
+    console.error(
+      '[Backend] Failed to load UPlanner data:',
+      e
+    );
+
     sdkError = true;
     sdkReady = false;
+
     renderConnectionError();
+
   } finally {
     sdkInitializing = false;
   }
@@ -891,74 +804,50 @@ async function acknowledgeWhatsNew() {
     }
 }
 
+function runOnboarding() {
+  const session = getSession();
 
-async function acknowledgeWhatsNew() {
-    const checkbox =
-        document.getElementById(
-            'uplanner-whats-new-check'
-        );
+  // Do nothing when logged out.
+  if (!session) {
+    return;
+  }
 
-    const doNotShowAgain =
-        checkbox?.checked === true;
+  /*
+   * 1. Privacy Notice
+   */
+  if (
+    onboardingState.privacy_completed_version
+      !== CURRENT_PRIVACY_VERSION
+  ) {
+    showPrivacyModal();
+    return;
+  }
 
-    try {
-        const response = await fetch(
-            '/api/whats-new/acknowledge',
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    version:
-                        CURRENT_APP_VERSION,
+  /*
+   * 2. What's New
+   */
+  if (
+    onboardingState.whats_new_version
+      !== CURRENT_APP_VERSION
+  ) {
+    showWhatsNewModal();
+    return;
+  }
 
-                    do_not_show_again:
-                        doNotShowAgain
-                })
-            }
-        );
-
-        const result =
-            await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                result.error ||
-                'Failed to save preference.'
-            );
-        }
-
-        onboardingState.whats_new_version =
-            CURRENT_APP_VERSION;
-
-        const modal =
-            document.getElementById(
-                'uplanner-whats-new-modal'
-            );
-
-        if (modal) {
-            modal.remove();
-        }
-
-        runOnboarding();
-
-    } catch (error) {
-        console.error(
-            '[UPlanner] whats new',
-            error
-        );
-
-        toast(
-            'Could not save your preference.',
-            'error'
-        );
-    }
+  /*
+   * Future onboarding steps go here.
+   *
+   * Example:
+   *
+   * if (
+   *   onboardingState.people_discovery_completed_version
+   *     !== CURRENT_APP_VERSION
+   * ) {
+   *   showPeopleDiscoveryOnboarding();
+   *   return;
+   * }
+   */
 }
-
-
 
 
 function recordIdentity(r) {
