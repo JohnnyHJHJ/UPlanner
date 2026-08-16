@@ -79,6 +79,11 @@ body{padding-bottom:60px}
 .tt-tooltip{position:fixed;background:#273449;border:1px solid var(--card-border);border-radius:0.5rem;padding:0.75rem;font-size:0.8rem;color:#f3f4f6;z-index:100;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
 select.input-field{appearance:auto}
 .badge-hidden{background:#7c2d12;color:#fed7aa;font-size:0.65rem;padding:2px 6px;border-radius:9999px;font-weight:600}
+.people-filter-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid rgba(148,163,184,.14);border-radius:999px;background:rgba(15,23,42,.64);color:#cbd5e1;font-size:.78rem;cursor:pointer;transition:.16s ease}
+.people-filter-chip:hover{border-color:rgba(251,113,133,.35);color:#fff;background:rgba(239,68,68,.08)}
+.people-filter-chip.selected{border-color:rgba(251,113,133,.35);background:rgba(239,68,68,.13);color:#ffe4e6}
+.filter-mode-btn{border:0;background:transparent;color:#64748b;padding:6px 9px;border-radius:7px;font-size:.75rem;font-weight:700;cursor:pointer}
+.filter-mode-btn.active{background:rgba(239,68,68,.14);color:#fecdd3}
 
 /* =========================================================
    UPLANNER UI 3.0 — visual system + interaction polish
@@ -175,6 +180,10 @@ a{color:inherit}
   height:68px!important;
 }
 #main-nav .nav-links{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  flex-wrap:nowrap!important;
   gap:4px!important;
 }
 #main-nav .nav-link{
@@ -796,38 +805,13 @@ tr:hover td{background:rgba(51,65,85,.24)!important}
   </div>
 </nav>
 <div id="bottom-nav" class="bottom-nav hidden" role="navigation" aria-label="Mobile navigation">
-  <button type="button" class="bottom-nav-item" data-nav="dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="people"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="own-schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="compare"><i data-lucide="git-compare-arrows" aria-hidden="true"></i><span>Compare</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="dashboard" aria-label="Home"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="people" aria-label="People"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="search" aria-label="Search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="own-schedule" aria-label="Schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="compare" aria-label="Compare"><i data-lucide="git-compare-2" aria-hidden="true"></i><span>Compare</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="groups" aria-label="Groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
 </div>
-   <div class="bottom-nav-item" data-nav="search">
-    <div
-  class="bottom-nav-item"
-  data-nav="people"
->
-  <i
-    data-lucide="users-round"
-    style="width:20px;height:20px"
-  ></i>
-
-  People
-</div>
-    
-    
-    
-    
-    <i data-lucide="search" style="width:20px;height:20px"></i>Search
-   </div>
-   <div class="bottom-nav-item" data-nav="own-schedule"><i data-lucide="calendar" style="width:20px;height:20px"></i>Sched
-   </div>
-   <div class="bottom-nav-item" data-nav="groups"><i data-lucide="users" style="width:20px;height:20px"></i>Groups
-   </div>
-   <div class="bottom-nav-item" data-nav="compare"><i data-lucide="git-compare" style="width:20px;height:20px"></i>Compare
-   </div>
-  </div>
   <main class="max-w-5xl mx-auto px-4 py-6" id="app">
    <div class="loading-overlay"><span class="spinner"></span> Connecting to UPlanner...
    </div>
@@ -3257,6 +3241,10 @@ function peopleView() {
       await loadPeople();
 
     if (!loaded) {
+      const filterPanel = document.getElementById('people-filter-panel');
+      const results = document.getElementById('people-results');
+      if (filterPanel) filterPanel.innerHTML = `<div class="flex items-center gap-3"><span class="text-red-300">Could not load filters.</span><button class="btn-secondary text-xs" onclick="showView('people')">Retry</button></div>`;
+      if (results) results.innerHTML = '<div class="card p-8 text-center text-gray-400">People could not be loaded right now.</div>';
       return;
     }
 
@@ -3498,6 +3486,76 @@ function getAvailableDegreeTags() {
         b.display_name
       )
   );
+}
+
+function renderPeopleFilters() {
+  const panel = document.getElementById('people-filter-panel');
+  if (!panel) return;
+
+  const schools = getAvailableSchoolTags();
+  const degrees = getAvailableDegreeTags();
+
+  const selectedSchoolCount = peopleFilters.schools.length;
+  const selectedDegreeCount = peopleFilters.degrees.length;
+
+  const chip = (tag, type, selected) => `
+    <button type="button"
+      class="people-filter-chip ${selected ? 'selected' : ''}"
+      aria-pressed="${selected}"
+      onclick="${type === 'school' ? 'togglePeopleSchool' : 'togglePeopleDegree'}('${esc(tag.id)}')">
+      <span>${escHtml(tag.display_name || tag.name || 'Unknown')}</span>
+      ${selected ? '<span aria-hidden="true">✓</span>' : ''}
+    </button>`;
+
+  panel.innerHTML = `
+    <div class="flex flex-col gap-4">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 class="font-semibold text-gray-100">Filters</h3>
+          <p class="text-xs text-gray-500 mt-1">Narrow people by academic tags.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500">${selectedSchoolCount + selectedDegreeCount} selected</span>
+          <button type="button" class="btn-secondary text-xs px-3 py-2" onclick="clearPeopleFilters()">Reset</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="form-label mb-0 text-sm">Match</label>
+          <div class="flex gap-1 rounded-lg p-1" style="background:rgba(15,23,42,.7);border:1px solid var(--border)">
+            <button type="button" class="filter-mode-btn ${peopleFilterMode === 'any' ? 'active' : ''}" onclick="setPeopleFilterMode('any')">Any</button>
+            <button type="button" class="filter-mode-btn ${peopleFilterMode === 'all' ? 'active' : ''}" onclick="setPeopleFilterMode('all')">All</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-200">Schools</span>
+          <span class="text-xs text-gray-500">${schools.length}</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${schools.length ? schools.map(tag => chip(tag, 'school', peopleFilters.schools.includes(String(tag.id)))).join('') : '<span class="text-xs text-gray-500">No school tags available.</span>'}
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold text-gray-200">Degree programs</span>
+          <span class="text-xs text-gray-500">${degrees.length}</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${degrees.length ? degrees.map(tag => chip(tag, 'degree', peopleFilters.degrees.includes(String(tag.id)))).join('') : '<span class="text-xs text-gray-500">No degree tags available.</span>'}
+        </div>
+      </div>
+    </div>`;
+}
+
+function setPeopleFilterMode(mode) {
+  peopleFilterMode = mode === 'all' ? 'all' : 'any';
+  renderPeopleFilters();
+  renderPeopleResults();
 }
 
 function togglePeopleSchool(id) {
