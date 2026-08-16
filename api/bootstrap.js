@@ -45,6 +45,7 @@ export default async function handler(req, res) {
     let preferences = { rows: [] };
     let onboarding = { rows: [] };
     let latestVersion = { rows: [] };
+    let whatsNewShownThisSession = false;
 
     if (currentUserId) {
       groups = await query(`

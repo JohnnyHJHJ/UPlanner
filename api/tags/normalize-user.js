@@ -5,7 +5,9 @@ function normalizeText(value) {
   return String(value || '')
     .trim()
     .toLowerCase()
+    .normalize('NFKC')
     .replace(/[.,'"`’]/g, '')
+    .replace(/[-_/]/g, ' ')
     .replace(/\s+/g, ' ');
 }
 

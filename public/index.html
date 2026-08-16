@@ -314,17 +314,72 @@ async function updateRecord(record) {
         const result = await response.json();
 
         if (!response.ok) {
-            console.error('[DataError] update:', result);
+            console.error(
+                '[DataError] update:',
+                result
+            );
 
             return {
                 isOk: false,
-                error: result.error || 'Update failed.'
+                error:
+                    result.error ||
+                    'Update failed.'
             };
         }
 
-        await refreshData({
-            rerender: true
-        });
+        /*
+         * Regenerate academic tags after
+         * profile information changes.
+         */
+        if (
+            record.type === 'user' &&
+            record.school !== undefined
+        ) {
+
+            try {
+
+                const tagResponse =
+                    await fetch(
+                        '/api/tags/normalize-user',
+                        {
+                            method: 'POST',
+
+                            credentials:
+                                'include',
+
+                            headers: {
+                                'Content-Type':
+                                    'application/json'
+                            },
+
+                            body: JSON.stringify({
+                                user_id:
+                                    record.user_id
+                            })
+                        }
+                    );
+
+                if (!tagResponse.ok) {
+                    console.error(
+                        '[Tags] normalization failed:',
+                        await tagResponse.text()
+                    );
+                }
+
+            } catch (tagError) {
+
+                console.error(
+                    '[Tags] normalization error:',
+                    tagError
+                );
+
+            }
+        }
+
+        /*
+         * Refresh PostgreSQL state immediately.
+         */
+        await refreshData();
 
         return {
             isOk: true,
@@ -332,7 +387,11 @@ async function updateRecord(record) {
         };
 
     } catch (error) {
-        console.error('[DataError] update:', error);
+
+        console.error(
+            '[DataError] update:',
+            error
+        );
 
         return {
             isOk: false,
@@ -340,6 +399,7 @@ async function updateRecord(record) {
         };
     }
 }
+
 async function deleteRecord(record) {
     try {
         const response = await fetch('/api/data', {
@@ -807,13 +867,12 @@ async function acknowledgeWhatsNew() {
 function runOnboarding() {
   const session = getSession();
 
-  // Do nothing when logged out.
   if (!session) {
     return;
   }
 
   /*
-   * 1. Privacy Notice
+   * PRIVACY
    */
   if (
     onboardingState.privacy_completed_version
@@ -824,15 +883,18 @@ function runOnboarding() {
   }
 
   /*
-   * 2. What's New
+   * WHAT'S NEW
    */
   if (
     onboardingState.whats_new_version
-      !== CURRENT_APP_VERSION
+      !== CURRENT_APP_VERSION &&
+    !whatsNewShownThisSession
   ) {
+    whatsNewShownThisSession = true;
     showWhatsNewModal();
     return;
   }
+}
 
   /*
    * Future onboarding steps go here.
@@ -847,7 +909,7 @@ function runOnboarding() {
    *   return;
    * }
    */
-}
+
 
 
 function recordIdentity(r) {
