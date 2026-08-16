@@ -40,70 +40,75 @@ export default async function handler(req, res) {
       `, [scheduleIds]);
     }
 
-    let groups = { rows: [] }, members = { rows: [] }, preferences = { rows: [] };
+    let groups = { rows: [] };
+    let members = { rows: [] };
+    let preferences = { rows: [] };
+    let onboarding = { rows: [] };
+    let latestVersion = { rows: [] };
+
     if (currentUserId) {
       groups = await query(`
-        SELECT id, owner_id, name, created_at, updated_at
-        FROM groups WHERE owner_id = $1 ORDER BY name
-      `, [currentUserId]);
-    
-    let schoolTags = { rows: [] };
-    let degreeTags = { rows: [] };
-    let userSchoolTags = { rows: [] };
-    let userDegreeTags = { rows: [] };
-
-    schoolTags = await query(`
-      SELECT
-        id,
-        canonical_name,
-        display_name
-      FROM school_tags
-      ORDER BY display_name
-    `);
-
-    degreeTags = await query(`
-      SELECT
-        id,
-        canonical_name,
-        display_name
-      FROM degree_tags
-      ORDER BY display_name
-    `);
-
-    if (currentUserId) {
-      userSchoolTags = await query(`
         SELECT
-          user_id,
-          school_tag_id,
-          source,
-          confidence
-        FROM user_school_tags
-        WHERE user_id = $1
+          id,
+          owner_id,
+          name,
+          created_at,
+          updated_at
+        FROM groups
+        WHERE owner_id = $1
+        ORDER BY name
       `, [currentUserId]);
-
-      userDegreeTags = await query(`
-        SELECT
-          user_id,
-          degree_tag_id,
-          source,
-          confidence
-        FROM user_degree_tags
-        WHERE user_id = $1
-      `, [currentUserId]);
-    }
 
       members = await query(`
-        SELECT gm.id, gm.group_id, gm.user_id, gm.created_at
+        SELECT
+          gm.id,
+          gm.group_id,
+          gm.user_id,
+          gm.created_at
         FROM group_members gm
-        JOIN groups g ON g.id = gm.group_id
+        JOIN groups g
+          ON g.id = gm.group_id
         WHERE g.owner_id = $1
       `, [currentUserId]);
 
       preferences = await query(`
-        SELECT id, user_id, target_user_id, preference_type, created_at
-        FROM user_preferences WHERE user_id = $1
+        SELECT
+          id,
+          user_id,
+          target_user_id,
+          preference_type,
+          created_at
+        FROM user_preferences
+        WHERE user_id = $1
+      `, [currentUserId]);
+
+      // V2 onboarding state for the logged-in user.
+      onboarding = await query(`
+        SELECT
+          user_id,
+          privacy_completed_version,
+          people_discovery_completed_version,
+          visibility_setup_completed_version,
+          whats_new_version,
+          updated_at
+        FROM onboarding_state
+        WHERE user_id = $1
+        LIMIT 1
       `, [currentUserId]);
     }
+
+    // Latest released UPlanner version.
+    // This query must happen before the final response.
+    latestVersion = await query(`
+      SELECT
+        version,
+        title,
+        release_notes,
+        released_at
+      FROM app_versions
+      ORDER BY released_at DESC
+      LIMIT 1
+    `);
 
     const records = [];
     const latestVersion = await query(`
@@ -192,10 +197,17 @@ export default async function handler(req, res) {
   return '';
   }
     return res.status(200).json({
-        session,
-        records,
-        app_version: latestVersion.rows[0] || null
-    });
+    session,
+    records,
+    onboarding: onboarding.rows[0] || {
+      user_id: currentUserId,
+      privacy_completed_version: null,
+      people_discovery_completed_version: null,
+      visibility_setup_completed_version: null,
+      whats_new_version: null
+  },
+  app_version: latestVersion.rows[0] || null
+});
 
   } catch (error) {
     console.error('[bootstrap]', error);
