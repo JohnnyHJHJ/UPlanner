@@ -110,6 +110,60 @@ lucide.createIcons();
 
 // ===== CENTRALIZED STATE =====
 let allData = [];
+async function refreshData(options = {}) {
+    const {
+        rerender = true
+    } = options;
+
+    try {
+        const response = await fetch('/api/bootstrap', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Bootstrap failed: ${response.status}`
+            );
+        }
+
+        const payload = await response.json();
+
+        if (!Array.isArray(payload.records)) {
+            throw new Error(
+                'Bootstrap response does not contain records.'
+            );
+        }
+
+        // This matches your actual /api/bootstrap response.
+        allData = payload.records;
+
+        // Keep session information available to the frontend.
+        if (payload.session) {
+            window.uplannerSession = payload.session;
+        }
+
+        if (rerender) {
+            render(currentParams);
+        }
+
+        return {
+            isOk: true,
+            data: payload
+        };
+
+    } catch (error) {
+        console.error('[UPlanner] refreshData failed:', error);
+
+        return {
+            isOk: false,
+            error
+        };
+    }
+}
 let sdkReady = false;
 let sdkError = false;
 let sdkInitializing = false;
@@ -258,48 +312,141 @@ function retryConnection() {
 }
 
 async function createRecord(record) {
-  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
-  try {
-    const result = await apiRequest('/api/data', { method: 'POST', body: JSON.stringify({ record }) });
-    if (result.record) allData.push(result.record);
-    return { isOk: true, record: result.record };
-  } catch (e) {
-    logDataError('create', record, { error: e });
-    return { isOk: false, error: e };
-  }
+    try {
+        const response = await fetch('/api/data', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                record
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error('[DataError] create:', result);
+
+            return {
+                isOk: false,
+                error: result.error || 'Create failed.'
+            };
+        }
+
+        // IMPORTANT:
+        // Reload the actual PostgreSQL state.
+        await refreshData({
+            rerender: true
+        });
+
+        return {
+            isOk: true,
+            data: result
+        };
+
+    } catch (error) {
+        console.error('[DataError] create:', error);
+
+        return {
+            isOk: false,
+            error
+        };
+    }
 }
 
 async function updateRecord(record) {
-  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
-  try {
-    const result = await apiRequest('/api/data', { method: 'PATCH', body: JSON.stringify({ record }) });
-    if (result.record) {
-      const idx = allData.findIndex(r => recordIdentity(r) === recordIdentity(result.record));
-      if (idx >= 0) allData[idx] = result.record;
-      else {
-        const oldIdx = allData.findIndex(r => recordIdentity(r) === recordIdentity(record));
-        if (oldIdx >= 0) allData[oldIdx] = result.record;
-        else allData.push(result.record);
-      }
-    }
-    return { isOk: true, record: result.record };
-  } catch (e) {
-    logDataError('update', record, { error: e });
-    return { isOk: false, error: e };
-  }
-}
+    try {
+        const response = await fetch('/api/data', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                record
+            })
+        });
 
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error('[DataError] update:', result);
+
+            return {
+                isOk: false,
+                error: result.error || 'Update failed.'
+            };
+        }
+
+        await refreshData({
+            rerender: true
+        });
+
+        return {
+            isOk: true,
+            data: result
+        };
+
+    } catch (error) {
+        console.error('[DataError] update:', error);
+
+        return {
+            isOk: false,
+            error
+        };
+    }
+}
 async function deleteRecord(record) {
-  if (!sdkReady) return { isOk: false, error: 'Backend not ready' };
-  try {
-    await apiRequest('/api/data', { method: 'DELETE', body: JSON.stringify({ record }) });
-    const idx = allData.findIndex(r => recordIdentity(r) === recordIdentity(record));
-    if (idx >= 0) allData.splice(idx, 1);
-    return { isOk: true };
-  } catch (e) {
-    logDataError('delete', record, { error: e });
-    return { isOk: false, error: e };
-  }
+    try {
+        const response = await fetch('/api/data', {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                record
+            })
+        });
+
+        if (!response.ok) {
+            let result = {};
+
+            try {
+                result = await response.json();
+            } catch {
+                result = {};
+            }
+
+            console.error('[DataError] delete:', result);
+
+            return {
+                isOk: false,
+                error: result.error || 'Delete failed.'
+            };
+        }
+
+        await refreshData({
+            rerender: true
+        });
+
+        return {
+            isOk: true
+        };
+
+    } catch (error) {
+        console.error('[DataError] delete:', error);
+
+        return {
+            isOk: false,
+            error
+        };
+    }
 }
 
 function recordIdentity(r) {
@@ -544,7 +691,7 @@ function profileSetup() {
                 </div>
 
                 <div>
-                    <label class="form-label">Degree Program</label>
+                    <label class="form-label">Degree PROGRESSIVERO</label>
                     <input
                         id="ps-degree"
                         class="input-field"
