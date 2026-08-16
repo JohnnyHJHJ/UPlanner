@@ -107,7 +107,18 @@ select.input-field{appearance:auto}
   <div id="tt-tooltip" class="tt-tooltip hidden"></div>
   <script>
 lucide.createIcons();
+const CURRENT_APP_VERSION = '2.0.0';
+const CURRENT_PRIVACY_VERSION = '2.0';
 
+let onboardingState = {
+    privacy_completed_version: null,
+    people_discovery_completed_version: null,
+    visibility_setup_completed_version: null,
+    whats_new_version: null
+};
+
+let appVersionInfo = null;
+let onboardingRunning = false;
 // ===== CENTRALIZED STATE =====
 let allData = [];
 async function refreshData(options = {}) {
@@ -140,6 +151,22 @@ async function refreshData(options = {}) {
 
         // This matches your actual /api/bootstrap response.
         allData = payload.records;
+        onboardingState =
+            payload.onboarding || {
+                privacy_completed_version: null,
+                people_discovery_completed_version: null,
+                visibility_setup_completed_version: null,
+                whats_new_version: null
+            };
+
+        appVersionInfo =
+            payload.app_version || null;
+        
+        render(currentParams);
+        
+        setTimeout(() => {
+            runOnboarding();
+        }, 300);
 
         // Keep session information available to the frontend.
         if (payload.session) {
@@ -448,6 +475,491 @@ async function deleteRecord(record) {
         };
     }
 }
+function showPrivacyModal() {
+    const existing =
+        document.getElementById('uplanner-privacy-modal');
+
+    if (existing) {
+        existing.remove();
+    }
+
+    const modal = document.createElement('div');
+
+    modal.id = 'uplanner-privacy-modal';
+
+    modal.className =
+        'fixed inset-0 z-[9999] flex items-center justify-center p-4';
+
+    modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+
+        <div class="relative card w-full max-w-2xl p-6 sm:p-8">
+
+            <div class="flex items-start gap-4">
+
+                <div
+                    class="w-12 h-12 rounded-xl shrink-0
+                           flex items-center justify-center text-2xl"
+                    style="background:var(--accent)">
+                    🔒
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-bold text-gray-50">
+                        UPlanner Data Privacy
+                    </h2>
+
+                    <p class="text-sm text-gray-400 mt-1">
+                        Privacy Notice ${CURRENT_PRIVACY_VERSION}
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="mt-6 space-y-4
+                        text-sm leading-6 text-gray-300">
+
+                <p>
+                    UPlanner collects and processes information
+                    you provide, such as your username, profile
+                    information, school, degree program, and
+                    schedule information.
+                </p>
+
+                <p>
+                    This information is used to provide UPlanner's
+                    scheduling, comparison, groups, search, and
+                    people-discovery features.
+                </p>
+
+                <p>
+                    UPlanner may standardize school and degree
+                    program names into academic tags. For example,
+                    different forms of the same school name can be
+                    grouped together to improve search and discovery.
+                </p>
+
+                <p>
+                    You will have controls that let you manage
+                    whether your profile can be discovered by other
+                    people.
+                </p>
+
+                <p>
+                    Your privacy settings can be reviewed and
+                    changed later through UPlanner's Settings.
+                </p>
+
+            </div>
+
+            <label
+                class="flex items-start gap-3 mt-6 cursor-pointer">
+
+                <input
+                    id="uplanner-privacy-check"
+                    type="checkbox"
+                    class="mt-1 w-4 h-4">
+
+                <span class="text-sm text-gray-200">
+                    I have read and understood this
+                    Privacy Notice.
+                </span>
+
+            </label>
+
+            <button
+                id="uplanner-privacy-continue"
+                class="btn-primary w-full mt-6"
+                disabled>
+
+                Continue
+
+            </button>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const checkbox =
+        document.getElementById(
+            'uplanner-privacy-check'
+        );
+
+    const button =
+        document.getElementById(
+            'uplanner-privacy-continue'
+        );
+
+    checkbox.addEventListener('change', () => {
+        button.disabled = !checkbox.checked;
+    });
+
+    button.addEventListener(
+        'click',
+        acknowledgePrivacy
+    );
+}
+
+async function acknowledgePrivacy() {
+    const button =
+        document.getElementById(
+            'uplanner-privacy-continue'
+        );
+
+    if (!button) {
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+
+    try {
+        const response = await fetch(
+            '/api/privacy/acknowledge',
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    policy_version:
+                        CURRENT_PRIVACY_VERSION
+                })
+            }
+        );
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                result.error ||
+                'Failed to save privacy acknowledgment.'
+            );
+        }
+
+        onboardingState.privacy_completed_version =
+            CURRENT_PRIVACY_VERSION;
+
+        const modal =
+            document.getElementById(
+                'uplanner-privacy-modal'
+            );
+
+        if (modal) {
+            modal.remove();
+        }
+
+        runOnboarding();
+
+    } catch (error) {
+        console.error(
+            '[UPlanner] privacy acknowledgment',
+            error
+        );
+
+        button.disabled = false;
+        button.textContent = 'Continue';
+
+        toast(
+            'Could not save your privacy acknowledgment.',
+            'error'
+        );
+    }
+}
+
+const UPLANNER_RELEASE_NOTES = [
+    {
+        icon: '👥',
+        title: 'Find People You Might Know',
+        description:
+            'Discover people using shared academic information.'
+    },
+    {
+        icon: '🏷️',
+        title: 'Smart Academic Tags',
+        description:
+            'Different versions of school and degree names can now be grouped together.'
+    },
+    {
+        icon: '🔒',
+        title: 'New Privacy Controls',
+        description:
+            'You will have more control over who can discover your profile.'
+    },
+    {
+        icon: '✨',
+        title: 'Improved People Search',
+        description:
+            'Search and filter people using academic information.'
+    }
+];
+
+
+function showWhatsNewModal() {
+    const existing =
+        document.getElementById(
+            'uplanner-whats-new-modal'
+        );
+
+    if (existing) {
+        existing.remove();
+    }
+
+    const modal = document.createElement('div');
+
+    modal.id =
+        'uplanner-whats-new-modal';
+
+    modal.className =
+        'fixed inset-0 z-[9998] flex items-center justify-center p-4';
+
+    modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+
+        <div class="relative card w-full max-w-lg p-6 sm:p-8">
+
+            <div class="flex items-start justify-between">
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-50">
+                        What's New
+                    </h2>
+
+                    <p class="text-sm text-gray-400 mt-1">
+                        UPlanner ${CURRENT_APP_VERSION}
+                    </p>
+                </div>
+
+                <button
+                    class="btn-secondary"
+                    id="uplanner-whats-new-close">
+                    ×
+                </button>
+
+            </div>
+
+            <div class="space-y-3 mt-6">
+
+                ${UPLANNER_RELEASE_NOTES.map(item => `
+                    <div
+                        class="rounded-xl p-4"
+                        style="
+                            background:rgba(255,255,255,0.045);
+                            border:1px solid rgba(255,255,255,0.06);
+                        ">
+
+                        <div class="flex items-start gap-3">
+
+                            <div class="text-2xl">
+                                ${item.icon}
+                            </div>
+
+                            <div>
+
+                                <h3
+                                    class="font-semibold text-gray-100">
+                                    ${escHtml(item.title)}
+                                </h3>
+
+                                <p
+                                    class="text-sm text-gray-400 mt-1">
+                                    ${escHtml(item.description)}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                `).join('')}
+
+            </div>
+
+            <label
+                class="flex items-center gap-3 mt-6
+                       text-sm text-gray-300 cursor-pointer">
+
+                <input
+                    id="uplanner-whats-new-check"
+                    type="checkbox"
+                    class="w-4 h-4">
+
+                Don't show this version again
+
+            </label>
+
+            <button
+                id="uplanner-whats-new-done"
+                class="btn-primary w-full mt-5">
+
+                Got it
+
+            </button>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document
+        .getElementById(
+            'uplanner-whats-new-close'
+        )
+        .addEventListener(
+            'click',
+            acknowledgeWhatsNew
+        );
+
+    document
+        .getElementById(
+            'uplanner-whats-new-done'
+        )
+        .addEventListener(
+            'click',
+            acknowledgeWhatsNew
+        );
+}
+
+
+async function acknowledgeWhatsNew() {
+    const checkbox =
+        document.getElementById(
+            'uplanner-whats-new-check'
+        );
+
+    const doNotShowAgain =
+        checkbox?.checked === true;
+
+    try {
+        const response = await fetch(
+            '/api/whats-new/acknowledge',
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    version:
+                        CURRENT_APP_VERSION,
+
+                    do_not_show_again:
+                        doNotShowAgain
+                })
+            }
+        );
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                result.error ||
+                'Failed to save preference.'
+            );
+        }
+
+        onboardingState.whats_new_version =
+            CURRENT_APP_VERSION;
+
+        const modal =
+            document.getElementById(
+                'uplanner-whats-new-modal'
+            );
+
+        if (modal) {
+            modal.remove();
+        }
+
+        runOnboarding();
+
+    } catch (error) {
+        console.error(
+            '[UPlanner] whats new',
+            error
+        );
+
+        toast(
+            'Could not save your preference.',
+            'error'
+        );
+    }
+}
+
+
+async function acknowledgeWhatsNew() {
+    const checkbox =
+        document.getElementById(
+            'uplanner-whats-new-check'
+        );
+
+    const doNotShowAgain =
+        checkbox?.checked === true;
+
+    try {
+        const response = await fetch(
+            '/api/whats-new/acknowledge',
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    version:
+                        CURRENT_APP_VERSION,
+
+                    do_not_show_again:
+                        doNotShowAgain
+                })
+            }
+        );
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                result.error ||
+                'Failed to save preference.'
+            );
+        }
+
+        onboardingState.whats_new_version =
+            CURRENT_APP_VERSION;
+
+        const modal =
+            document.getElementById(
+                'uplanner-whats-new-modal'
+            );
+
+        if (modal) {
+            modal.remove();
+        }
+
+        runOnboarding();
+
+    } catch (error) {
+        console.error(
+            '[UPlanner] whats new',
+            error
+        );
+
+        toast(
+            'Could not save your preference.',
+            'error'
+        );
+    }
+}
+
+
+
 
 function recordIdentity(r) {
   if (!r) return '';
