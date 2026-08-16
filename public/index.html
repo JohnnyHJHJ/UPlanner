@@ -790,22 +790,22 @@ tr:hover td{background:rgba(51,65,85,.24)!important}
     <button type="button" data-template-id="nav-brand" class="font-bold cursor-pointer" aria-label="Go to dashboard" onclick="showView('dashboard')">UPlanner</button>
     <div class="nav-links flex items-center gap-1 flex-wrap" role="navigation">
       <button type="button" class="nav-link" data-nav="dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
-      <button type="button" class="nav-link" data-nav="people"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
+      <button type="button" class="nav-link" data-nav="people"><i data-lucide="users" aria-hidden="true"></i><span>People</span></button>
       <button type="button" class="nav-link" data-nav="search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
-      <button type="button" class="nav-link" data-nav="own-schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
-      <button type="button" class="nav-link" data-nav="compare"><i data-lucide="git-compare-arrows" aria-hidden="true"></i><span>Compare</span></button>
+      <button type="button" class="nav-link" data-nav="own-schedule"><i data-lucide="calendar" aria-hidden="true"></i><span>Schedule</span></button>
+      <button type="button" class="nav-link" data-nav="compare"><i data-lucide="git-compare" aria-hidden="true"></i><span>Compare</span></button>
       <button type="button" class="nav-link" data-nav="groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
-      <button type="button" class="nav-link" data-nav="profile"><i data-lucide="user-round" aria-hidden="true"></i><span>Profile</span></button>
+      <button type="button" class="nav-link" data-nav="profile"><i data-lucide="user" aria-hidden="true"></i><span>Profile</span></button>
       <button type="button" class="nav-link" data-nav="logout" style="color:#fda4af"><i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span></button>
     </div>
   </div>
 </nav>
 <div id="bottom-nav" class="bottom-nav hidden" role="navigation" aria-label="Mobile navigation">
   <button type="button" class="bottom-nav-item" data-nav="dashboard" aria-label="Home"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Home</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="people" aria-label="People"><i data-lucide="users-round" aria-hidden="true"></i><span>People</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="people" aria-label="People"><i data-lucide="users" aria-hidden="true"></i><span>People</span></button>
   <button type="button" class="bottom-nav-item" data-nav="search" aria-label="Search"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="own-schedule" aria-label="Schedule"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Schedule</span></button>
-  <button type="button" class="bottom-nav-item" data-nav="compare" aria-label="Compare"><i data-lucide="git-compare-2" aria-hidden="true"></i><span>Compare</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="own-schedule" aria-label="Schedule"><i data-lucide="calendar" aria-hidden="true"></i><span>Schedule</span></button>
+  <button type="button" class="bottom-nav-item" data-nav="compare" aria-label="Compare"><i data-lucide="git-compare" aria-hidden="true"></i><span>Compare</span></button>
   <button type="button" class="bottom-nav-item" data-nav="groups" aria-label="Groups"><i data-lucide="users" aria-hidden="true"></i><span>Groups</span></button>
 </div>
   <main class="max-w-5xl mx-auto px-4 py-6" id="app">
@@ -2033,6 +2033,11 @@ const app = document.getElementById('app');
 const nav = document.getElementById('main-nav');
 const bottomNav = document.getElementById('bottom-nav');
 
+// ===== SHARED SCHEDULE CONSTANTS =====
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const BLOCK_COLORS = ['#fbbf24', '#60a5fa', '#818cf8', '#a78bfa', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#10b981', '#06b6d4'];
+const PERSON_COLORS = BLOCK_COLORS;
+
 function showView(name, params) {
   if (currentView !== name || JSON.stringify(currentParams) !== JSON.stringify(params)) {
     previousView = currentView;
@@ -2131,11 +2136,11 @@ function landing() {
           <button class="btn-primary text-base px-7" onclick="showView('signup')"><i data-lucide="arrow-right" style="width:18px;height:18px"></i> Get started</button>
           <button class="btn-secondary text-base px-7" onclick="showView('login')"><i data-lucide="log-in" style="width:18px;height:18px"></i> Log in</button>
         </div>
-        <button class="u-back-link mt-5 mx-auto" onclick="showView('how-to-use')"><i data-lucide="circle-help" style="width:17px;height:17px"></i> See how UPlanner works</button>
+        <button class="u-back-link mt-5 mx-auto" onclick="showView('how-to-use')"><i data-lucide="help-circle" style="width:17px;height:17px"></i> See how UPlanner works</button>
       </div>
       <div class="u-feature-grid">
         <article class="card u-feature">
-          <div class="u-feature-icon"><i data-lucide="calendar-days" style="width:22px;height:22px"></i></div>
+          <div class="u-feature-icon"><i data-lucide="calendar" style="width:22px;height:22px"></i></div>
           <h2 class="font-bold text-lg text-gray-50 mt-4">One schedule</h2>
           <p class="text-sm text-gray-400 mt-2 leading-6">Keep classes, days, and time blocks in one clean view that is easy to update.</p>
           <div class="u-mini-stat">
@@ -2145,7 +2150,7 @@ function landing() {
           </div>
         </article>
         <article class="card u-feature">
-          <div class="u-feature-icon"><i data-lucide="users-round" style="width:22px;height:22px"></i></div>
+          <div class="u-feature-icon"><i data-lucide="users" style="width:22px;height:22px"></i></div>
           <h2 class="font-bold text-lg text-gray-50 mt-4">Find your people</h2>
           <p class="text-sm text-gray-400 mt-2 leading-6">Discover students using shared academic details, then keep useful connections organized in groups.</p>
           <div class="u-mini-stat">
@@ -2155,7 +2160,7 @@ function landing() {
           </div>
         </article>
         <article class="card u-feature">
-          <div class="u-feature-icon"><i data-lucide="git-compare-arrows" style="width:22px;height:22px"></i></div>
+          <div class="u-feature-icon"><i data-lucide="git-compare" style="width:22px;height:22px"></i></div>
           <h2 class="font-bold text-lg text-gray-50 mt-4">Find free time</h2>
           <p class="text-sm text-gray-400 mt-2 leading-6">Compare schedules visually and spot the windows where everyone is actually available.</p>
           <div class="u-mini-stat">
@@ -3715,6 +3720,39 @@ function personMatchesPeopleFilters(
   }
 
   return true;
+}
+
+function renderPeopleSelectionBar() {
+  const bar = document.getElementById('people-selection-bar');
+  if (!bar) return;
+
+  const count = peopleSelected.size;
+  if (!count) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+
+  bar.classList.remove('hidden');
+  bar.innerHTML = `
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <p class="font-semibold text-gray-100">
+          ${count} ${count === 1 ? 'person' : 'people'} selected
+        </p>
+        <p class="text-xs text-gray-500 mt-1">
+          Add the selected people to your saved list.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn-secondary text-xs" onclick="peopleSelected.clear(); renderPeopleSelectionBar(); renderPeopleResults();">
+          Clear
+        </button>
+        <button type="button" class="btn-primary text-xs" onclick="saveSelectedPeople()">
+          Save Selected
+        </button>
+      </div>
+    </div>`;
 }
 
 function renderPeopleResults() {
