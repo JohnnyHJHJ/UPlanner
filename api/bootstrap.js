@@ -46,6 +46,51 @@ export default async function handler(req, res) {
         SELECT id, owner_id, name, created_at, updated_at
         FROM groups WHERE owner_id = $1 ORDER BY name
       `, [currentUserId]);
+    
+    let schoolTags = { rows: [] };
+    let degreeTags = { rows: [] };
+    let userSchoolTags = { rows: [] };
+    let userDegreeTags = { rows: [] };
+
+    schoolTags = await query(`
+      SELECT
+        id,
+        canonical_name,
+        display_name
+      FROM school_tags
+      ORDER BY display_name
+    `);
+
+    degreeTags = await query(`
+      SELECT
+        id,
+        canonical_name,
+        display_name
+      FROM degree_tags
+      ORDER BY display_name
+    `);
+
+    if (currentUserId) {
+      userSchoolTags = await query(`
+        SELECT
+          user_id,
+          school_tag_id,
+          source,
+          confidence
+        FROM user_school_tags
+        WHERE user_id = $1
+      `, [currentUserId]);
+
+      userDegreeTags = await query(`
+        SELECT
+          user_id,
+          degree_tag_id,
+          source,
+          confidence
+        FROM user_degree_tags
+        WHERE user_id = $1
+      `, [currentUserId]);
+    }
 
       members = await query(`
         SELECT gm.id, gm.group_id, gm.user_id, gm.created_at
@@ -61,6 +106,17 @@ export default async function handler(req, res) {
     }
 
     const records = [];
+    const latestVersion = await query(`
+      SELECT
+        version,
+        title,
+        release_notes,
+        released_at
+      FROM app_versions
+      ORDER BY released_at DESC
+      LIMIT 1
+    `);
+
 
     for (const u of users.rows) records.push({
       type: 'user', username: u.username, username_normalized: u.username_normalized,
@@ -135,7 +191,12 @@ export default async function handler(req, res) {
 
   return '';
   }
-    return res.status(200).json({ session, records });
+    return res.status(200).json({
+        session,
+        records,
+        app_version: latestVersion.rows[0] || null
+    });
+
   } catch (error) {
     console.error('[bootstrap]', error);
     return res.status(500).json({ error: 'Failed to load UPlanner data.' });
