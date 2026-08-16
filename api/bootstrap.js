@@ -111,16 +111,6 @@ export default async function handler(req, res) {
     `);
 
     const records = [];
-    const latestVersion = await query(`
-      SELECT
-        version,
-        title,
-        release_notes,
-        released_at
-      FROM app_versions
-      ORDER BY released_at DESC
-      LIMIT 1
-    `);
 
 
     for (const u of users.rows) records.push({
@@ -212,5 +202,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[bootstrap]', error);
     return res.status(500).json({ error: 'Failed to load UPlanner data.' });
-  }
+  } 
 }
