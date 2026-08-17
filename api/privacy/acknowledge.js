@@ -16,9 +16,10 @@ export default async function handler(req, res) {
     });
   }
 
-  // The frontend sends "version", so the backend must read "version".
+  // Accept the current field name and the legacy field name so an older
+  // cached frontend cannot break the privacy acknowledgment flow.
   const version = String(
-    req.body?.version || ''
+    req.body?.version ?? req.body?.policy_version ?? ''
   ).trim();
 
   if (!version) {
@@ -28,7 +29,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Save the privacy notice version that the user acknowledged.
     await query(`
       INSERT INTO onboarding_state (
         user_id,
