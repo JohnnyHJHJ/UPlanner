@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   install:
-    if: contains(github.event.head_commit.message, '[install-ui-revamp]')
+    if: ${{ !contains(github.event.head_commit.message, 'Install unified People/Search UI revamp') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
