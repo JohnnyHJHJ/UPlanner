@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "node scripts/install-ui-revamp.js",
   "rewrites": [
     {
       "source": "/api/people/save",
