@@ -9,7 +9,8 @@ const indexPath = path.join(__dirname, '..', 'public', 'index.html');
 const markers = [
   '<script src="/ui-revamp.js"></script>',
   '<script src="/ui-revamp-2.js"></script>',
-  '<script src="/ui-next.js"></script>'
+  '<script src="/ui-next.js"></script>',
+  '<script src="/ui-privacy.js"></script>'
 ];
 
 if (!fs.existsSync(indexPath)) {
