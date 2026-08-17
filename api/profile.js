@@ -15,6 +15,41 @@ export default async function handler(req, res) {
 
   if (!method(req, res, ['PATCH', 'DELETE'])) return;
 
+  // Reuse this existing endpoint for visibility changes so the deployment
+  // stays below Vercel Hobby's serverless-function limit.
+  if (req.method === 'PATCH' && req.body?.action === 'visibility') {
+    const visibility = req.body?.visibility || {};
+    const keys = ['discoverable', 'show_school_tag', 'show_degree_tag'];
+    if (!keys.every(key => typeof visibility[key] === 'boolean')) {
+      return res.status(400).json({ error: 'All visibility settings must be boolean values.' });
+    }
+
+    try {
+      const result = await query(`
+        INSERT INTO profile_visibility (
+          user_id, discoverable, show_school_tag, show_degree_tag, updated_at
+        )
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+          discoverable = EXCLUDED.discoverable,
+          show_school_tag = EXCLUDED.show_school_tag,
+          show_degree_tag = EXCLUDED.show_degree_tag,
+          updated_at = NOW()
+        RETURNING discoverable, show_school_tag, show_degree_tag, updated_at
+      `, [
+        session.userId,
+        visibility.discoverable,
+        visibility.show_school_tag,
+        visibility.show_degree_tag
+      ]);
+      return res.status(200).json({ visibility: result.rows[0] });
+    } catch (error) {
+      console.error('[profile/visibility]', error);
+      return res.status(500).json({ error: 'Visibility update failed.' });
+    }
+  }
+
   try {
     if (req.method === 'DELETE') {
       await query('DELETE FROM users WHERE id = $1', [session.userId]);
