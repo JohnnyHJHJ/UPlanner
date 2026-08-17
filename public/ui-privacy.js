@@ -92,12 +92,32 @@
     button.addEventListener('click', openVisibility); heading.appendChild(button);
   }
 
+  function addBlockButtons() {
+    if (!state.people.length) load().then(addBlockButtons).catch(function () {});
+    document.querySelectorAll('.u-person-card').forEach(function (card) {
+      if (card.querySelector('[data-upv-block]')) return;
+      var title = card.querySelector('h3');
+      var person = state.people.find(function (item) { return title && item.username === title.textContent.trim(); });
+      var actions = card.querySelector('.u-person-actions');
+      if (!person || !actions) return;
+      var button = document.createElement('button');
+      button.className = 'btn-secondary text-xs'; button.dataset.upvBlock = person.user_id; button.textContent = 'Block';
+      button.addEventListener('click', function () {
+        if (!confirm('Block ' + person.username + '? They will no longer be able to find you or see your schedule.')) return;
+        request('/api/people', { method: 'POST', body: JSON.stringify({ action: 'block', user_ids: [person.user_id] }) })
+          .then(function () { card.remove(); toast(person.username + ' has been blocked.'); })
+          .catch(function (error) { toast(error.message, 'error'); });
+      });
+      actions.appendChild(button);
+    });
+  }
+
   function install() {
     addButton();
     var style = document.createElement('style');
     style.textContent = '.upv-backdrop{position:fixed;inset:0;z-index:2100;display:grid;place-items:center;padding:1rem;background:rgba(2,6,23,.78);backdrop-filter:blur(7px)}.upv-modal{width:min(660px,100%);max-height:90vh;overflow:auto;padding:1.25rem}.upv-head{display:flex;justify-content:space-between;gap:1rem;align-items:start}.upv-head h2{font-size:1.35rem;font-weight:800;color:#f8fafc}.upv-kicker{color:#fb7185;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.upv-mode{display:flex;gap:.55rem;align-items:flex-start;margin:1rem 0;padding:.8rem;border:1px solid rgba(251,113,133,.25);border-radius:.75rem;color:#e2e8f0;font-size:.9rem}.upv-tools{display:flex;gap:.45rem;flex-wrap:wrap;margin:.8rem 0}.upv-list{display:grid;gap:.4rem;max-height:300px;overflow:auto;border:1px solid rgba(148,163,184,.18);border-radius:.75rem;padding:.55rem}.upv-person{display:flex;gap:.65rem;align-items:center;padding:.55rem;border-radius:.55rem;color:#e2e8f0}.upv-person:hover{background:rgba(148,163,184,.08)}.upv-person b,.upv-person small{display:block}.upv-person small{color:#94a3b8;font-size:.75rem}.upv-empty{padding:.8rem;color:#94a3b8}.upv-foot{display:flex;justify-content:flex-end;margin-top:1rem}@media(max-width:520px){.upv-modal{padding:1rem}.upv-foot .btn-primary{width:100%}}';
     document.head.appendChild(style);
-    setInterval(addButton, 700);
+    setInterval(function () { addButton(); addBlockButtons(); }, 700);
   }
   install();
 })();

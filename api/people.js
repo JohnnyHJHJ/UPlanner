@@ -14,6 +14,21 @@ export default async function handler(req, res) {
       for (const targetUserId of people) {
         if (targetUserId === String(session.userId)) continue;
 
+        if (action === 'block' || action === 'unblock') {
+          if (action === 'block') {
+            await query(
+              `INSERT INTO blocked_users (blocker_user_id, blocked_user_id)
+               SELECT $1, id FROM users WHERE id = $2
+               ON CONFLICT (blocker_user_id, blocked_user_id) DO NOTHING`,
+              [session.userId, targetUserId]
+            );
+            await query('DELETE FROM saved_people WHERE user_id = $1 AND target_user_id = $2', [session.userId, targetUserId]);
+          } else {
+            await query('DELETE FROM blocked_users WHERE blocker_user_id = $1 AND blocked_user_id = $2', [session.userId, targetUserId]);
+          }
+          continue;
+        }
+
         const allowed = await query(`
           SELECT u.id
           FROM users u
