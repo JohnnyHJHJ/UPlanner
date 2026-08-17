@@ -1,13 +1,19 @@
 import { query } from '../lib/db.js';
 import { getSession } from '../lib/session.js';
 import { method } from '../lib/api.js';
-import { syncUserTags } from '../lib/tags.js';
+import { syncUserTags, normalizeText } from '../lib/tags.js';
 
 export default async function handler(req, res) {
-  if (!method(req, res, ['PATCH', 'DELETE'])) return;
-
   const session = getSession(req);
   if (!session) return res.status(401).json({ error: 'Not authenticated.' });
+
+  // Keep autocomplete under the existing profile function so Vercel Hobby
+  // does not need another Serverless Function.
+  if (req.method === 'GET' && req.query?.action === 'suggestions') {
+    return suggestions(req, res);
+  }
+
+  if (!method(req, res, ['PATCH', 'DELETE'])) return;
 
   try {
     if (req.method === 'DELETE') {
@@ -61,11 +67,63 @@ export default async function handler(req, res) {
     } else {
       user.birthday = '';
     }
-    
+
     return res.status(200).json({ user });
   } catch (error) {
     if (error.code === '23505') return res.status(409).json({ error: 'Username already taken.' });
     console.error(error);
     return res.status(500).json({ error: 'Profile update failed.' });
+  }
+}
+
+async function suggestions(req, res) {
+  const type = String(req.query?.type || '').trim().toLowerCase();
+  const rawQuery = String(req.query?.q || '').trim();
+  const limit = Math.min(Math.max(Number(req.query?.limit) || 12, 1), 25);
+  const normalizedQuery = normalizeText(rawQuery);
+
+  if (!['school', 'degree'].includes(type)) {
+    return res.status(400).json({ error: 'type must be school or degree.' });
+  }
+
+  try {
+    const tagTable = type === 'school' ? 'school_tags' : 'degree_tags';
+    const aliasTable = type === 'school' ? 'school_aliases' : 'degree_aliases';
+    const tagId = type === 'school' ? 'school_tag_id' : 'degree_tag_id';
+
+    const result = normalizedQuery
+      ? await query(`
+          SELECT
+            t.id,
+            t.canonical_name,
+            t.display_name,
+            MIN(CASE WHEN a.alias_normalized = $1 THEN 0 ELSE 1 END) AS exact_rank
+          FROM ${tagTable} t
+          JOIN ${aliasTable} a ON a.${tagId} = t.id
+          WHERE a.alias_normalized LIKE $2
+             OR t.canonical_name LIKE $2
+             OR t.display_name ILIKE $3
+          GROUP BY t.id, t.canonical_name, t.display_name
+          ORDER BY exact_rank, t.display_name
+          LIMIT $4
+        `, [normalizedQuery, `${normalizedQuery}%`, `%${rawQuery}%`, limit])
+      : await query(`
+          SELECT id, canonical_name, display_name
+          FROM ${tagTable}
+          ORDER BY display_name
+          LIMIT $1
+        `, [limit]);
+
+    return res.status(200).json({
+      type,
+      suggestions: result.rows.map(row => ({
+        id: row.id,
+        canonical_name: row.canonical_name,
+        display_name: row.display_name
+      }))
+    });
+  } catch (error) {
+    console.error('[profile/suggestions]', error);
+    return res.status(500).json({ error: 'Failed to load tag suggestions.' });
   }
 }
