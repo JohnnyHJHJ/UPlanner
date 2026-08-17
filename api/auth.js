@@ -12,26 +12,43 @@ export default async function handler(req, res) {
     }
 
     const action = req.body?.action;
-    const username = String(req.body?.username || '').trim();
-    if (!username) return res.status(400).json({ error: 'Username is required.' });
+    const requestedUsername = String(req.body?.username || '').trim();
+    if (!requestedUsername) return res.status(400).json({ error: 'Username is required.' });
 
-    const normalized = username.toLowerCase();
+    const normalized = requestedUsername.toLowerCase();
 
     if (action === 'signup') {
-      const existing = await query(
-        'SELECT id, username FROM users WHERE username_normalized = $1 LIMIT 1',
-        [normalized]
-      );
-      if (existing.rows.length) return res.status(409).json({ error: 'That username is already taken.' });
+      // Usernames double as stable profile tags. The first "luke" keeps
+      // "luke"; later signups become "luke2", "luke3", etc.
+      let username = requestedUsername;
+      let usernameNormalized = normalized;
+      let suffix = 1;
+
+      while (true) {
+        const existing = await query(
+          'SELECT id FROM users WHERE username_normalized = $1 LIMIT 1',
+          [usernameNormalized]
+        );
+
+        if (!existing.rows.length) break;
+
+        suffix += 1;
+        username = `${requestedUsername}${suffix}`;
+        usernameNormalized = username.toLowerCase();
+      }
 
       const id = cryptoRandomId();
       await query(
         `INSERT INTO users (id, username, username_normalized)
          VALUES ($1, $2, $3)`,
-        [id, username, normalized]
+        [id, username, usernameNormalized]
       );
       setSession(res, id, username);
-      return res.status(201).json({ user: { id, username } });
+      return res.status(201).json({
+        user: { id, username },
+        requested_username: requestedUsername,
+        tag: `#${username}`
+      });
     }
 
     if (action === 'login') {
@@ -42,12 +59,15 @@ export default async function handler(req, res) {
       if (!result.rows.length) return res.status(401).json({ error: 'Username not found.' });
       const user = result.rows[0];
       setSession(res, user.id, user.username);
-      return res.status(200).json({ user });
+      return res.status(200).json({ user, tag: `#${user.username}` });
     }
 
     return res.status(400).json({ error: 'Unknown auth action.' });
   } catch (error) {
     console.error(error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'That username is already taken. Please try again.' });
+    }
     return res.status(500).json({ error: 'Authentication failed.' });
   }
 }
