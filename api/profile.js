@@ -7,10 +7,37 @@ export default async function handler(req, res) {
   const session = getSession(req);
   if (!session) return res.status(401).json({ error: 'Not authenticated.' });
 
-  // Keep autocomplete under the existing profile function so Vercel Hobby
-  // does not need another Serverless Function.
+  // Keep autocomplete and visibility configuration under this existing
+  // profile function so Vercel Hobby does not need another Serverless Function.
   if (req.method === 'GET' && req.query?.action === 'suggestions') {
     return suggestions(req, res);
+  }
+
+  if (req.method === 'GET' && req.query?.action === 'visibility') {
+    try {
+      const visibility = await query(
+        `SELECT discoverable, show_school_tag, show_degree_tag,
+                COALESCE(audience_mode, 'public') AS audience_mode
+         FROM profile_visibility WHERE user_id = $1`,
+        [session.userId]
+      );
+      const audience = await query(
+        'SELECT viewer_user_id FROM profile_visibility_audience WHERE owner_user_id = $1 ORDER BY viewer_user_id',
+        [session.userId]
+      );
+      return res.status(200).json({
+        visibility: visibility.rows[0] || {
+          discoverable: true,
+          show_school_tag: true,
+          show_degree_tag: true,
+          audience_mode: 'public'
+        },
+        audience_user_ids: audience.rows.map(row => row.viewer_user_id)
+      });
+    } catch (error) {
+      console.error('[profile/visibility]', error);
+      return res.status(500).json({ error: 'Failed to load visibility settings.' });
+    }
   }
 
   if (!method(req, res, ['PATCH', 'DELETE'])) return;
@@ -20,6 +47,11 @@ export default async function handler(req, res) {
   if (req.method === 'PATCH' && req.body?.action === 'visibility') {
     const visibility = req.body?.visibility || {};
     const keys = ['discoverable', 'show_school_tag', 'show_degree_tag'];
+    const audienceMode = visibility.audience_mode === 'allowlist' ? 'allowlist' : 'public';
+    const audienceUserIds = Array.isArray(visibility.audience_user_ids)
+      ? [...new Set(visibility.audience_user_ids.map(String))]
+        .filter(userId => userId && userId !== session.userId)
+      : [];
     if (!keys.every(key => typeof visibility[key] === 'boolean')) {
       return res.status(400).json({ error: 'All visibility settings must be boolean values.' });
     }
@@ -27,23 +59,38 @@ export default async function handler(req, res) {
     try {
       const result = await query(`
         INSERT INTO profile_visibility (
-          user_id, discoverable, show_school_tag, show_degree_tag, updated_at
+          user_id, discoverable, show_school_tag, show_degree_tag, audience_mode, updated_at
         )
-        VALUES ($1, $2, $3, $4, NOW())
+        VALUES ($1, $2, $3, $4, $5, NOW())
         ON CONFLICT (user_id)
         DO UPDATE SET
           discoverable = EXCLUDED.discoverable,
           show_school_tag = EXCLUDED.show_school_tag,
           show_degree_tag = EXCLUDED.show_degree_tag,
+          audience_mode = EXCLUDED.audience_mode,
           updated_at = NOW()
-        RETURNING discoverable, show_school_tag, show_degree_tag, updated_at
+        RETURNING discoverable, show_school_tag, show_degree_tag, audience_mode, updated_at
       `, [
         session.userId,
         visibility.discoverable,
         visibility.show_school_tag,
-        visibility.show_degree_tag
+        visibility.show_degree_tag,
+        audienceMode
       ]);
-      return res.status(200).json({ visibility: result.rows[0] });
+      await query('DELETE FROM profile_visibility_audience WHERE owner_user_id = $1', [session.userId]);
+      if (audienceMode === 'allowlist' && audienceUserIds.length) {
+        await query(`
+          INSERT INTO profile_visibility_audience (owner_user_id, viewer_user_id)
+          SELECT $1, user_id
+          FROM UNNEST($2::text[]) AS user_id
+          JOIN users u ON u.id = user_id
+          ON CONFLICT (owner_user_id, viewer_user_id) DO NOTHING
+        `, [session.userId, audienceUserIds]);
+      }
+      return res.status(200).json({
+        visibility: result.rows[0],
+        audience_user_ids: audienceMode === 'allowlist' ? audienceUserIds : []
+      });
     } catch (error) {
       console.error('[profile/visibility]', error);
       return res.status(500).json({ error: 'Visibility update failed.' });
