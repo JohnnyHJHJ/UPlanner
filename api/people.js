@@ -19,7 +19,17 @@ export default async function handler(req, res) {
           FROM users u
           LEFT JOIN profile_visibility pv ON pv.user_id = u.id
           WHERE u.id = $1
-            AND COALESCE(pv.discoverable, TRUE) = TRUE
+            AND (
+              (
+                COALESCE(pv.audience_mode, 'public') = 'public'
+                AND COALESCE(pv.discoverable, TRUE) = TRUE
+              )
+              OR EXISTS (
+                SELECT 1 FROM profile_visibility_audience pva
+                WHERE pva.owner_user_id = u.id
+                  AND pva.viewer_user_id = $2
+              )
+            )
             AND NOT EXISTS (
               SELECT 1 FROM blocked_users b
               WHERE (b.blocker_user_id = $2 AND b.blocked_user_id = u.id)
@@ -83,7 +93,17 @@ export default async function handler(req, res) {
         ON sp.user_id = $1
        AND sp.target_user_id = u.id
       WHERE u.id <> $1
-        AND COALESCE(pv.discoverable, TRUE) = TRUE
+        AND (
+          (
+            COALESCE(pv.audience_mode, 'public') = 'public'
+            AND COALESCE(pv.discoverable, TRUE) = TRUE
+          )
+          OR EXISTS (
+            SELECT 1 FROM profile_visibility_audience pva
+            WHERE pva.owner_user_id = u.id
+              AND pva.viewer_user_id = $1
+          )
+        )
         AND NOT EXISTS (
           SELECT 1 FROM blocked_users b
           WHERE b.blocker_user_id = $1 AND b.blocked_user_id = u.id
