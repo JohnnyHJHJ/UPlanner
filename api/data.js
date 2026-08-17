@@ -1,5 +1,6 @@
 import { query } from '../lib/db.js';
 import { getSession } from '../lib/session.js';
+import { syncUserTags } from '../lib/tags.js';
 
 function auth(req, res) {
   const session = getSession(req);
@@ -53,6 +54,7 @@ async function create(r, session, res) {
     `, [r.user_id, r.username, r.username_normalized, r.full_name || null, r.birthday || null,
         r.degree_program || null, r.year_level || null, r.section || null, r.pronouns || null,
         r.school || null, r.profile_color || '#fca5a5', r.profile_emoji || '😊']);
+    await syncUserTags(result.rows[0].id);
     return res.status(201).json({ record: userRecord(result.rows[0]) });
   }
 
@@ -111,6 +113,7 @@ async function update(r, session, res) {
         r.degree_program || null, r.year_level || null, r.section || null, r.pronouns || null,
         r.school || null, r.profile_color || '#fca5a5', r.profile_emoji || '😊', r.user_id]);
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
+    await syncUserTags(r.user_id);
     return res.status(200).json({ record: userRecord(result.rows[0]) });
   }
 

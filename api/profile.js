@@ -1,6 +1,7 @@
 import { query } from '../lib/db.js';
 import { getSession } from '../lib/session.js';
 import { method } from '../lib/api.js';
+import { syncUserTags } from '../lib/tags.js';
 
 export default async function handler(req, res) {
   if (!method(req, res, ['PATCH', 'DELETE'])) return;
@@ -50,6 +51,8 @@ export default async function handler(req, res) {
 
     if (!result.rows.length) return res.status(404).json({ error: 'User not found.' });
     const user = result.rows[0];
+
+    await syncUserTags(session.userId);
 
     if (user.birthday instanceof Date && !Number.isNaN(user.birthday.getTime())) {
       user.birthday = user.birthday.toISOString().slice(0, 10);
