@@ -1,0 +1,43 @@
+name: Install UI revamp
+
+on:
+  push:
+    branches: [development]
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: contains(github.event.head_commit.message, '[install-ui-revamp]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Inject UI revamp script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/index.html')
+          text = p.read_text(encoding='utf-8')
+          marker = '<script src="/ui-revamp.js"></script>'
+          if marker not in text:
+              if '</body>' not in text:
+                  raise SystemExit('index.html has no closing body tag')
+              text = text.replace('</body>', marker + '\n</body>', 1)
+              p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit UI revamp injection
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/index.html
+          if git diff --cached --quiet; then
+            echo 'UI revamp already installed.'
+            exit 0
+          fi
+          git commit -m 'Install unified People/Search UI revamp'
+          git push
