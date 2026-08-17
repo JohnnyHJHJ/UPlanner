@@ -263,8 +263,13 @@
     if (!window.__uGapPeopleInstalled) {
       window.__uGapPeopleInstalled = true;
       window.peopleView = function () {
+        var refreshAfterLoad = !peopleLoaded;
         var view = renderPeopleView();
-        loadPeople().then(function () { if (document.getElementById('ugap-people-results')) window.showView('people'); }).catch(function () {});
+        if (refreshAfterLoad) {
+          loadPeople().then(function () {
+            if (document.getElementById('ugap-people-results')) window.showView('people');
+          }).catch(function () {});
+        }
         return view;
       };
       window.searchView = window.peopleView;
