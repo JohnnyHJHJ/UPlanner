@@ -3,23 +3,16 @@ import { getSession } from '../lib/session.js';
 
 export default async function handler(req, res) {
   const session = getSession(req);
-
-  if (!session) {
-    return res.status(401).json({ error: 'Not authenticated.' });
-  }
+  if (!session) return res.status(401).json({ error: 'Not authenticated.' });
 
   if (req.method === 'POST') {
-    const people = Array.isArray(req.body?.user_ids)
-      ? req.body.user_ids
-      : [];
-
-    if (!people.length) {
-      return res.status(400).json({ error: 'No people were selected.' });
-    }
+    const action = String(req.body?.action || 'save').trim().toLowerCase();
+    const people = Array.isArray(req.body?.user_ids) ? req.body.user_ids.map(String) : [];
+    if (!people.length) return res.status(400).json({ error: 'No people were selected.' });
 
     try {
       for (const targetUserId of people) {
-        if (targetUserId === session.userId) continue;
+        if (targetUserId === String(session.userId)) continue;
 
         const allowed = await query(`
           SELECT u.id
@@ -37,21 +30,29 @@ export default async function handler(req, res) {
 
         if (!allowed.rows.length) continue;
 
-        await query(`
-          INSERT INTO saved_people (user_id, target_user_id)
-          VALUES ($1, $2)
-          ON CONFLICT (user_id, target_user_id) DO NOTHING
-        `, [session.userId, targetUserId]);
+        if (action === 'remove') {
+          await query(
+            'DELETE FROM saved_people WHERE user_id = $1 AND target_user_id = $2',
+            [session.userId, targetUserId]
+          );
+        } else {
+          await query(`
+            INSERT INTO saved_people (user_id, target_user_id)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id, target_user_id) DO NOTHING
+          `, [session.userId, targetUserId]);
+        }
       }
 
       return res.status(200).json({ ok: true });
     } catch (error) {
       console.error('[people/save]', error);
-      return res.status(500).json({ error: 'Failed to save selected people.' });
+      return res.status(500).json({ error: 'Failed to update saved people.' });
     }
   }
 
   if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
@@ -60,11 +61,27 @@ export default async function handler(req, res) {
   try {
     const people = await query(`
       SELECT
-        u.id, u.username, u.full_name, u.school, u.degree_program,
-        u.year_level, u.section, u.pronouns, u.profile_color, u.profile_emoji,
-        pv.discoverable, pv.show_school_tag, pv.show_degree_tag
+        u.id,
+        u.username,
+        u.full_name,
+        u.birthday,
+        EXTRACT(YEAR FROM AGE(CURRENT_DATE, u.birthday))::int AS age,
+        u.school,
+        u.degree_program,
+        u.year_level,
+        u.section,
+        u.pronouns,
+        u.profile_color,
+        u.profile_emoji,
+        pv.discoverable,
+        pv.show_school_tag,
+        pv.show_degree_tag,
+        (sp.target_user_id IS NOT NULL) AS saved
       FROM users u
       LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+      LEFT JOIN saved_people sp
+        ON sp.user_id = $1
+       AND sp.target_user_id = u.id
       WHERE u.id <> $1
         AND COALESCE(pv.discoverable, TRUE) = TRUE
         AND NOT EXISTS (
@@ -121,6 +138,8 @@ export default async function handler(req, res) {
         user_id: user.id,
         username: user.username,
         full_name: user.full_name || '',
+        birthday: user.birthday || '',
+        age: user.age == null ? null : Number(user.age),
         school: user.school || '',
         degree_program: user.degree_program || '',
         year_level: user.year_level || '',
@@ -128,6 +147,7 @@ export default async function handler(req, res) {
         pronouns: user.pronouns || '',
         profile_color: user.profile_color || '#fca5a5',
         profile_emoji: user.profile_emoji || '😊',
+        saved: Boolean(user.saved),
         school_tags: school,
         degree_tags: degree
       };
