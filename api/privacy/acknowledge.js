@@ -16,12 +16,10 @@ export default async function handler(req, res) {
     });
   }
 
+  // The frontend sends "version", so the backend must read "version".
   const version = String(
     req.body?.version || ''
   ).trim();
-
-  const doNotShowAgain =
-    req.body?.do_not_show_again === true;
 
   if (!version) {
     return res.status(400).json({
@@ -30,75 +28,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    /*
-     * Always record that the user has seen this version.
-     */
+    // Save the privacy notice version that the user acknowledged.
     await query(`
-      INSERT INTO whats_new_acknowledgements (
+      INSERT INTO onboarding_state (
         user_id,
-        version,
-        do_not_show_again
+        privacy_completed_version,
+        updated_at
       )
-      VALUES ($1, $2, $3)
-
-      ON CONFLICT (
-        user_id,
-        version
-      )
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (user_id)
       DO UPDATE SET
-        do_not_show_again =
-          EXCLUDED.do_not_show_again,
-
-        acknowledged_at =
-          NOW()
+        privacy_completed_version =
+          EXCLUDED.privacy_completed_version,
+        updated_at = NOW()
     `, [
       session.userId,
-      version,
-      doNotShowAgain
+      version
     ]);
 
-    /*
-     * Only permanently suppress this version when
-     * the user explicitly checked the box.
-     */
-    if (doNotShowAgain) {
-
-      await query(`
-        INSERT INTO onboarding_state (
-          user_id,
-          whats_new_version,
-          updated_at
-        )
-        VALUES ($1, $2, NOW())
-
-        ON CONFLICT (user_id)
-        DO UPDATE SET
-
-          whats_new_version =
-            EXCLUDED.whats_new_version,
-
-          updated_at =
-            NOW()
-      `, [
-        session.userId,
-        version
-      ]);
-
-    }
-
     return res.status(200).json({
-      ok: true,
-      do_not_show_again: doNotShowAgain
+      ok: true
     });
 
   } catch (error) {
-    console.error(
-      '[whats-new/acknowledge]',
-      error
-    );
+    console.error('[privacy/acknowledge]', error);
 
     return res.status(500).json({
-      error: 'Failed to save What’s New preference.'
+      error: 'Failed to save privacy acknowledgment.'
     });
   }
 }
