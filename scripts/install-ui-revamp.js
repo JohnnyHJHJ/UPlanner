@@ -1,10 +1,15 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const indexPath = path.join(process.cwd(), 'public', 'index.html');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const indexPath = path.join(__dirname, '..', 'public', 'index.html');
+
 const markers = [
   '<script src="/ui-revamp.js"></script>',
-  '<script src="/ui-revamp-2.js"></script>'
+  '<script src="/ui-revamp-2.js"></script>',
+  '<script src="/ui-next.js"></script>'
 ];
 
 if (!fs.existsSync(indexPath)) {
