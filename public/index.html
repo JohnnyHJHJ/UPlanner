@@ -2065,8 +2065,13 @@ function render(params) {
     else el.removeAttribute('aria-current');
   });
   const views = { landing, signup, login, 'profile-setup': profileSetup, dashboard, people: peopleView, 'own-schedule': ownSchedule, search: searchView, 'view-schedule': viewSchedule, 'edit-schedule': editSchedule, compare: compareView, profile: profileView, 'view-profile': viewProfileView, groups: groupsView, 'group-detail': groupDetailView, 'how-to-use': howToUseView };
+  const renderingView = currentView;
   app.innerHTML = '';
   const el = (views[currentView] || landing)(params);
+  // A view may redirect synchronously (for example, landing redirects an
+  // existing session to the dashboard). That nested render has already placed
+  // the destination in #app, so do not overwrite it with this view's return.
+  if (currentView !== renderingView) return;
   if (typeof el === 'string') app.innerHTML = el;
   else if (el) app.appendChild(el);
   lucide.createIcons();
