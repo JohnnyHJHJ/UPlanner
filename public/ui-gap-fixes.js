@@ -13,6 +13,8 @@
   var condensed = localStorage.getItem('uplanner_people_density') === 'condensed';
   var selectedSchools = [];
   var selectedDegrees = [];
+  var selectedGroups = [];
+  var filtersExpanded = false;
   var lastSessionUser = null;
   var tourShownFor = null;
 
@@ -73,6 +75,7 @@
       if (savedOnly && !person.saved) return false;
       if (!matchesOne(person.school_tags || [], selectedSchools)) return false;
       if (!matchesOne(person.degree_tags || [], selectedDegrees)) return false;
+      if (selectedGroups.length && !selectedGroups.some(function (groupId) { return (window.getGroupMembers ? window.getGroupMembers(groupId) : []).some(function (member) { return member.target_user_id === person.user_id; }); })) return false;
       if (!query) return true;
       var values = [
         person.username, '#' + (person.username || ''), person.full_name,
@@ -125,7 +128,8 @@
     if (!session) { window.showView('landing'); return ''; }
     var schoolTags = allTags('school_tags');
     var degreeTags = allTags('degree_tags');
-    var selectedCount = selectedSchools.length + selectedDegrees.length;
+    var selectedCount = selectedSchools.length + selectedDegrees.length + selectedGroups.length;
+    var groups = window.getUserGroups ? window.getUserGroups(session.userId) : [];
     var div = document.createElement('div');
     div.innerHTML = '<section class="ugap-page">' +
       '<div class="ugap-heading"><div><p class="ugap-kicker">Directory</p><h1>People &amp; Search</h1><p>Find people by name, tag, visible school or degree, year, and section.</p></div>' +
@@ -133,8 +137,9 @@
       '<div class="card ugap-toolbar"><input id="ugap-people-query" class="input-field" value="' + esc(peopleQuery) + '" placeholder="Search by name, #tag, school, degree, year, or section" />' +
       '<button type="button" class="' + (savedOnly ? 'btn-primary' : 'btn-secondary') + '" data-ugap-action="saved">Saved People <span class="ugap-count">' + people.filter(function (p) { return p.saved; }).length + '</span></button>' +
       '<button type="button" class="btn-secondary" data-ugap-action="clear">Clear filters' + (selectedCount ? ' (' + selectedCount + ')' : '') + '</button></div>' +
-      '<div class="card ugap-filter-panel"><div><strong>School</strong><div class="ugap-chips">' + (schoolTags.length ? schoolTags.map(function (tag) { return chip(tag, 'school', selectedSchools.indexOf(String(tag.id)) !== -1); }).join('') : '<span>No visible school tags available.</span>') + '</div></div>' +
-      '<div><strong>Degree / course</strong><div class="ugap-chips">' + (degreeTags.length ? degreeTags.map(function (tag) { return chip(tag, 'degree', selectedDegrees.indexOf(String(tag.id)) !== -1); }).join('') : '<span>No visible degree tags available.</span>') + '</div></div></div>' +
+      '<div class="card ugap-filter-panel"><button type="button" class="ugap-filter-toggle" data-ugap-action="toggle-filters" aria-expanded="' + filtersExpanded + '"><span>Filters' + (selectedCount ? ' (' + selectedCount + ')' : '') + '</span><span aria-hidden="true">' + (filtersExpanded ? '−' : '+') + '</span></button><div class="ugap-filter-body' + (filtersExpanded ? '' : ' hidden') + '"><div><strong>School</strong><div class="ugap-chips">' + (schoolTags.length ? schoolTags.map(function (tag) { return chip(tag, 'school', selectedSchools.indexOf(String(tag.id)) !== -1); }).join('') : '<span>No visible school tags available.</span>') + '</div></div>' +
+      '<div><strong>Degree / course</strong><div class="ugap-chips">' + (degreeTags.length ? degreeTags.map(function (tag) { return chip(tag, 'degree', selectedDegrees.indexOf(String(tag.id)) !== -1); }).join('') : '<span>No visible degree tags available.</span>') + '</div></div>' +
+      '<div><strong>My groups</strong><div class="ugap-chips">' + (groups.length ? groups.map(function (group) { return chip({ id: group.group_id, display_name: group.name }, 'group', selectedGroups.indexOf(String(group.group_id)) !== -1); }).join('') : '<span>No groups yet.</span>') + '</div></div></div></div>' +
       '<div id="ugap-people-results" class="mt-5"></div></section>';
     setTimeout(function () { renderPeopleResults(); }, 0);
     return div;
@@ -176,7 +181,8 @@
       var action = button.dataset.ugapAction;
       var userId = button.dataset.personId;
       if (action === 'saved') { savedOnly = !savedOnly; window.showView('people'); }
-      if (action === 'clear') { selectedSchools = []; selectedDegrees = []; peopleQuery = ''; savedOnly = false; window.showView('people'); }
+      if (action === 'clear') { selectedSchools = []; selectedDegrees = []; selectedGroups = []; peopleQuery = ''; savedOnly = false; window.showView('people'); }
+      if (action === 'toggle-filters') { filtersExpanded = !filtersExpanded; window.showView('people'); }
       if (action === 'density') { condensed = !condensed; localStorage.setItem('uplanner_people_density', condensed ? 'condensed' : 'expanded'); window.showView('people'); }
       if (action === 'profile') window.showView('view-profile', { userId: userId });
       if (action === 'save') savePerson(userId);
@@ -187,7 +193,7 @@
     }
     var filter = event.target.closest('[data-ugap-filter]');
     if (filter) {
-      toggleSelected(filter.dataset.ugapFilter === 'school' ? selectedSchools : selectedDegrees, filter.dataset.tagId);
+      toggleSelected(filter.dataset.ugapFilter === 'school' ? selectedSchools : filter.dataset.ugapFilter === 'degree' ? selectedDegrees : selectedGroups, filter.dataset.tagId);
       window.showView('people');
     }
   }
@@ -254,6 +260,9 @@
     if (!session) { lastSessionUser = null; tourShownFor = null; return; }
     if (lastSessionUser !== session.userId) { lastSessionUser = session.userId; tourShownFor = null; }
     if (tourShownFor === session.userId) return;
+    // Keep required profile setup unobstructed; show the tutorial as soon as
+    // the person reaches their dashboard instead of marking it as skipped.
+    if (!document.querySelector('.u-dashboard-grid')) return;
     if (document.querySelector('[id^="uplanner-"][id$="-modal"]')) return;
     tourShownFor = session.userId;
     showTour();
@@ -283,7 +292,7 @@
   }
 
   var style = document.createElement('style');
-  style.textContent = '.ugap-page,.ugap-schedule{max-width:1200px;margin:auto}.ugap-heading{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap}.ugap-heading h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;color:#f8fafc}.ugap-heading p{color:#94a3b8;margin-top:.25rem}.ugap-kicker{font-size:.72rem!important;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#fb7185}.ugap-toolbar{margin-top:1.25rem;padding:.75rem;display:flex;gap:.6rem;flex-wrap:wrap}.ugap-toolbar input{flex:1 1 360px}.ugap-count{display:inline-flex;min-width:1.25rem;justify-content:center}.ugap-filter-panel{padding:1rem;margin-top:1rem;display:grid;gap:1rem}.ugap-filter-panel strong{display:block;color:#e2e8f0;margin-bottom:.45rem}.ugap-chips{display:flex;gap:.4rem;flex-wrap:wrap}.ugap-chip{border:1px solid rgba(148,163,184,.28);border-radius:999px;padding:.35rem .65rem;background:rgba(15,23,42,.75);color:#cbd5e1;font-size:.78rem;cursor:pointer}.ugap-chip.active{background:rgba(244,63,94,.18);border-color:#fb7185;color:#fff}.ugap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem}.ugap-person-card{padding:1rem;display:flex;flex-direction:column;gap:.85rem}.ugap-person-card.condensed{gap:.55rem}.ugap-person-top{display:flex;gap:.75rem;align-items:center}.ugap-avatar{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;flex:none}.ugap-person-top h3{font-weight:800;color:#f8fafc}.ugap-person-top h3 small{font-size:.72rem;color:#fda4af}.ugap-person-top p{font-size:.85rem;color:#cbd5e1}.ugap-saved,.ugap-tag{display:inline-flex;align-items:center;border-radius:999px;padding:.2rem .48rem;font-size:.7rem;font-weight:700}.ugap-saved{background:rgba(34,197,94,.12);color:#bbf7d0}.ugap-tag{background:rgba(148,163,184,.12);color:#cbd5e1}.ugap-details{display:grid;gap:.45rem;font-size:.82rem}.ugap-details>div{display:flex;justify-content:space-between;gap:.75rem}.ugap-details span{color:#94a3b8}.ugap-details b{color:#e2e8f0;text-align:right;font-weight:500}.ugap-tags{display:flex;gap:.3rem;flex-wrap:wrap}.ugap-actions{display:flex;gap:.4rem;flex-wrap:wrap;border-top:1px solid rgba(148,163,184,.13);padding-top:.75rem}.ugap-actions button{font-size:.75rem}.ugap-timetable-wrap{margin-top:1.25rem;overflow:auto;padding:0}.ugap-timetable{min-width:760px;position:relative;padding-left:58px}.ugap-day-head{display:grid;grid-template-columns:repeat(8,1fr);height:42px;align-items:center;text-align:center;border-bottom:1px solid rgba(148,163,184,.2);color:#cbd5e1;font-size:.78rem;font-weight:700}.ugap-day-head span:first-child{margin-left:-58px}.ugap-times{position:absolute;width:58px;left:0;top:42px;display:flex;flex-direction:column;justify-content:space-between;color:#94a3b8;font-size:.68rem;text-align:right;padding-right:8px;box-sizing:border-box}.ugap-grid-lines{position:relative;background:repeating-linear-gradient(to bottom,transparent 0,transparent 51px,rgba(148,163,184,.16) 52px),repeating-linear-gradient(to right,transparent 0,transparent calc(14.285% - 1px),rgba(148,163,184,.13) calc(14.285% - 1px),rgba(148,163,184,.13) 14.285%)}.ugap-class{position:absolute;border-radius:8px;padding:.35rem;box-sizing:border-box;color:#07111f;overflow:hidden;font-size:.72rem;box-shadow:0 2px 8px rgba(0,0,0,.22)}.ugap-class strong,.ugap-class small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ugap-class small{margin-top:.15rem;opacity:.75}.ugap-tour-backdrop{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:1rem;background:rgba(2,6,23,.76);backdrop-filter:blur(5px)}.ugap-tour{width:min(520px,100%);padding:1.4rem}.ugap-tour h2{font-size:1.35rem;font-weight:800;color:#f8fafc;margin:.3rem 0 1rem}.ugap-tour ol{display:grid;gap:.9rem;padding-left:1.25rem;color:#e2e8f0}.ugap-tour li span{display:block;color:#94a3b8;font-size:.9rem;margin-top:.15rem}.ugap-tour-actions{display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;margin-top:1.3rem}@media(max-width:640px){.ugap-toolbar>*{width:100%}.ugap-details>div{flex-direction:column;gap:.1rem}.ugap-details b{text-align:left}.ugap-actions button{flex:1 1 40%}}';
+  style.textContent = '.ugap-page,.ugap-schedule{max-width:1200px;margin:auto}.ugap-heading{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap}.ugap-heading h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;color:#f8fafc}.ugap-heading p{color:#94a3b8;margin-top:.25rem}.ugap-kicker{font-size:.72rem!important;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#fb7185}.ugap-toolbar{margin-top:1.25rem;padding:.75rem;display:flex;gap:.6rem;flex-wrap:wrap}.ugap-toolbar input{flex:1 1 360px}.ugap-count{display:inline-flex;min-width:1.25rem;justify-content:center}.ugap-filter-panel{padding:.7rem 1rem;margin-top:1rem}.ugap-filter-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;color:#e2e8f0;font-size:.84rem;font-weight:800;cursor:pointer}.ugap-filter-body{display:grid;gap:.85rem;padding-top:.85rem}.ugap-filter-panel strong{display:block;color:#e2e8f0;margin-bottom:.45rem}.ugap-chips{display:flex;gap:.4rem;flex-wrap:wrap}.ugap-chip{border:1px solid rgba(148,163,184,.28);border-radius:999px;padding:.35rem .65rem;background:rgba(15,23,42,.75);color:#cbd5e1;font-size:.78rem;cursor:pointer}.ugap-chip.active{background:rgba(244,63,94,.18);border-color:#fb7185;color:#fff}.ugap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem}.ugap-person-card{padding:1rem;display:flex;flex-direction:column;gap:.85rem}.ugap-person-card.condensed{gap:.55rem}.ugap-person-top{display:flex;gap:.75rem;align-items:center}.ugap-avatar{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;flex:none}.ugap-person-top h3{font-weight:800;color:#f8fafc}.ugap-person-top h3 small{font-size:.72rem;color:#fda4af}.ugap-person-top p{font-size:.85rem;color:#cbd5e1}.ugap-saved,.ugap-tag{display:inline-flex;align-items:center;border-radius:999px;padding:.2rem .48rem;font-size:.7rem;font-weight:700}.ugap-saved{background:rgba(34,197,94,.12);color:#bbf7d0}.ugap-tag{background:rgba(148,163,184,.12);color:#cbd5e1}.ugap-details{display:grid;gap:.45rem;font-size:.82rem}.ugap-details>div{display:flex;justify-content:space-between;gap:.75rem}.ugap-details span{color:#94a3b8}.ugap-details b{color:#e2e8f0;text-align:right;font-weight:500}.ugap-tags{display:flex;gap:.3rem;flex-wrap:wrap}.ugap-actions{display:flex;gap:.4rem;flex-wrap:wrap;border-top:1px solid rgba(148,163,184,.13);padding-top:.75rem}.ugap-actions button{font-size:.75rem}.ugap-timetable-wrap{margin-top:1.25rem;overflow:auto;padding:0}.ugap-timetable{min-width:760px;position:relative;padding-left:58px}.ugap-day-head{display:grid;grid-template-columns:repeat(8,1fr);height:42px;align-items:center;text-align:center;border-bottom:1px solid rgba(148,163,184,.2);color:#cbd5e1;font-size:.78rem;font-weight:700}.ugap-day-head span:first-child{margin-left:-58px}.ugap-times{position:absolute;width:58px;left:0;top:42px;display:flex;flex-direction:column;justify-content:space-between;color:#94a3b8;font-size:.68rem;text-align:right;padding-right:8px;box-sizing:border-box}.ugap-grid-lines{position:relative;background:repeating-linear-gradient(to bottom,transparent 0,transparent 51px,rgba(148,163,184,.16) 52px),repeating-linear-gradient(to right,transparent 0,transparent calc(14.285% - 1px),rgba(148,163,184,.13) calc(14.285% - 1px),rgba(148,163,184,.13) 14.285%)}.ugap-class{position:absolute;border-radius:8px;padding:.35rem;box-sizing:border-box;color:#07111f;overflow:hidden;font-size:.72rem;box-shadow:0 2px 8px rgba(0,0,0,.22)}.ugap-class strong,.ugap-class small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ugap-class small{margin-top:.15rem;opacity:.75}.ugap-tour-backdrop{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:1rem;background:rgba(2,6,23,.76);backdrop-filter:blur(5px)}.ugap-tour{width:min(520px,100%);padding:1.4rem}.ugap-tour h2{font-size:1.35rem;font-weight:800;color:#f8fafc;margin:.3rem 0 1rem}.ugap-tour ol{display:grid;gap:.9rem;padding-left:1.25rem;color:#e2e8f0}.ugap-tour li span{display:block;color:#94a3b8;font-size:.9rem;margin-top:.15rem}.ugap-tour-actions{display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;margin-top:1.3rem}@media(max-width:640px){.ugap-toolbar>*{width:100%}.ugap-details>div{flex-direction:column;gap:.1rem}.ugap-details b{text-align:left}.ugap-actions button{flex:1 1 40%}}';
   document.head.appendChild(style);
   install();
   setInterval(checkSignInTutorial, 700);
