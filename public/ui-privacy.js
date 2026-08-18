@@ -85,7 +85,7 @@
 
   function addButton() {
     if (document.getElementById('upv-open')) return;
-    var heading = document.querySelector('.u-page-heading, #app > div > div');
+    var heading = document.querySelector('.u-page-heading, .ugap-heading, #app > div > div');
     if (!heading || !/People|Search/.test(heading.textContent || '')) return;
     var button = document.createElement('button');
     button.id = 'upv-open'; button.className = 'btn-secondary text-xs'; button.textContent = 'Visibility';
@@ -94,11 +94,11 @@
 
   function addBlockButtons() {
     if (!state.people.length) load().then(addBlockButtons).catch(function () {});
-    document.querySelectorAll('.u-person-card').forEach(function (card) {
+    document.querySelectorAll('.u-person-card, .ugap-person-card').forEach(function (card) {
       if (card.querySelector('[data-upv-block]')) return;
       var title = card.querySelector('h3');
       var person = state.people.find(function (item) { return title && item.username === title.textContent.trim(); });
-      var actions = card.querySelector('.u-person-actions');
+      var actions = card.querySelector('.u-person-actions, .ugap-actions');
       if (!person || !actions) return;
       var button = document.createElement('button');
       button.className = 'btn-secondary text-xs'; button.dataset.upvBlock = person.user_id; button.textContent = 'Block';
