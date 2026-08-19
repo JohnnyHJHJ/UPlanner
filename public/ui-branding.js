@@ -14,9 +14,9 @@
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
       body, button, input, select, textarea { font-family:'Nunito',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important; }
       h1,h2,h3,h4,h5,h6 { font-family:'Nunito',ui-sans-serif,system-ui,sans-serif !important; letter-spacing:-.025em; }
-      .up-brand-logo { width:32px;height:32px;object-fit:contain;display:block;flex:0 0 auto; }
-      .up-hero-logo { width:76px;height:76px;object-fit:contain;display:block;margin:0 auto 16px;filter:drop-shadow(0 10px 24px rgba(191,8,17,.18)); }
-      .up-home-tagline { display:block!important; max-width:680px; margin:10px auto 0; color:#cbd5e1; font-size:clamp(1rem,2vw,1.18rem); line-height:1.65; font-weight:500; letter-spacing:-.01em; }
+      .up-brand-logo { width:42px;height:42px;object-fit:contain;display:block;flex:0 0 auto; }
+      .up-hero-logo { width:128px;height:128px;object-fit:contain;display:block;margin:0 auto 18px;filter:drop-shadow(0 12px 30px rgba(191,8,17,.22)); }
+      .up-home-tagline { display:block!important; max-width:760px; margin:12px auto 0; color:#cbd5e1; font-size:clamp(1rem,2vw,1.22rem); line-height:1.65; font-weight:500; letter-spacing:-.01em; }
       [data-template-id="nav-brand"] { font-family:'Nunito',sans-serif !important; font-weight:800 !important; }
     `;
     document.head.appendChild(style);
@@ -59,30 +59,31 @@
     });
   }
 
-  function replaceLandingTagline() {
-    var found = false;
-    document.querySelectorAll('h1,h2,h3,h4,h5,h6,p,div,span').forEach(function (el) {
+  function removeOldLandingSlogan() {
+    document.querySelectorAll('body *').forEach(function (el) {
       if (el.closest('#main-nav')) return;
       if (el.children.length) return;
       if (el.textContent.trim() !== OLD_TAGLINE) return;
+      el.remove();
+    });
+
+    document.querySelectorAll('.up-old-slogan').forEach(function (el) { el.remove(); });
+  }
+
+  function ensureSingleLandingTagline() {
+    var tags = Array.from(document.querySelectorAll('.up-home-tagline'));
+    if (tags.length > 1) tags.slice(1).forEach(function (el) { el.remove(); });
+
+    if (document.querySelector('.up-home-tagline')) return;
+
+    var heading = Array.from(document.querySelectorAll('h1,h2,h3')).find(function (el) {
+      return !el.closest('#main-nav') && el.textContent.trim() === 'UPlanner';
+    });
+    if (heading) {
       var tagline = document.createElement('p');
       tagline.className = 'up-home-tagline';
       tagline.textContent = NEW_TAGLINE;
-      el.replaceWith(tagline);
-      found = true;
-    });
-
-    if (document.querySelector('.up-home-tagline')) return;
-    if (!found) {
-      var heading = Array.from(document.querySelectorAll('h1,h2,h3')).find(function (el) {
-        return !el.closest('#main-nav') && el.textContent.trim() === 'UPlanner';
-      });
-      if (heading) {
-        var tagline = document.createElement('p');
-        tagline.className = 'up-home-tagline';
-        tagline.textContent = NEW_TAGLINE;
-        heading.insertAdjacentElement('afterend', tagline);
-      }
+      heading.insertAdjacentElement('afterend', tagline);
     }
   }
 
@@ -91,7 +92,8 @@
     addFavicon();
     brandNav();
     brandHeadings();
-    replaceLandingTagline();
+    removeOldLandingSlogan();
+    ensureSingleLandingTagline();
   }
 
   function boot() {
