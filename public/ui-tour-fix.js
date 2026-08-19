@@ -15,4 +15,20 @@
     });
   }
 
-  function suppressTour
+  function suppressTour() {
+    if (!hasOwnScheduleEntries()) return;
+    var tour = document.getElementById('ugap-tour');
+    if (tour) tour.remove();
+  }
+
+  function install() {
+    suppressTour();
+    setInterval(suppressTour, 500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install, { once: true });
+  } else {
+    install();
+  }
+})();
