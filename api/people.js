@@ -5,6 +5,13 @@ export default async function handler(req, res) {
   const session = getSession(req);
   if (!session) return res.status(401).json({ error: 'Not authenticated.' });
 
+  if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET, POST');
+      return res.status(405).json({ error: 'Method not allowed.' });
+    }
+  }
+
   if (req.method === 'POST') {
     const action = String(req.body?.action || 'save').trim().toLowerCase();
     const people = Array.isArray(req.body?.user_ids) ? req.body.user_ids.map(String) : [];
@@ -56,10 +63,7 @@ export default async function handler(req, res) {
         if (!allowed.rows.length) continue;
 
         if (action === 'remove') {
-          await query(
-            'DELETE FROM saved_people WHERE user_id = $1 AND target_user_id = $2',
-            [session.userId, targetUserId]
-          );
+          await query('DELETE FROM saved_people WHERE user_id = $1 AND target_user_id = $2', [session.userId, targetUserId]);
         } else {
           await query(`
             INSERT INTO saved_people (user_id, target_user_id)
@@ -74,11 +78,6 @@ export default async function handler(req, res) {
       console.error('[people/save]', error);
       return res.status(500).json({ error: 'Failed to update saved people.' });
     }
-  }
-
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET, POST');
-    return res.status(405).json({ error: 'Method not allowed.' });
   }
 
   const currentUserId = session.userId;
@@ -99,8 +98,8 @@ export default async function handler(req, res) {
         u.profile_color,
         u.profile_emoji,
         pv.discoverable,
-        pv.show_school_tag,
-        pv.show_degree_tag,
+        COALESCE(pv.show_school_tag, TRUE) AS show_school_tag,
+        COALESCE(pv.show_degree_tag, TRUE) AS show_degree_tag,
         (sp.target_user_id IS NOT NULL) AS saved
       FROM users u
       LEFT JOIN profile_visibility pv ON pv.user_id = u.id
@@ -152,21 +151,10 @@ export default async function handler(req, res) {
 
     const result = people.rows.map(user => {
       const school = user.show_school_tag
-        ? schoolTags.rows.filter(tag => tag.user_id === user.id).map(tag => ({
-            id: tag.id,
-            canonical_name: tag.canonical_name,
-            display_name: tag.display_name,
-            confidence: tag.confidence
-          }))
+        ? schoolTags.rows.filter(tag => tag.user_id === user.id).map(tag => ({ id: tag.id, canonical_name: tag.canonical_name, display_name: tag.display_name, confidence: tag.confidence }))
         : [];
-
       const degree = user.show_degree_tag
-        ? degreeTags.rows.filter(tag => tag.user_id === user.id).map(tag => ({
-            id: tag.id,
-            canonical_name: tag.canonical_name,
-            display_name: tag.display_name,
-            confidence: tag.confidence
-          }))
+        ? degreeTags.rows.filter(tag => tag.user_id === user.id).map(tag => ({ id: tag.id, canonical_name: tag.canonical_name, display_name: tag.display_name, confidence: tag.confidence }))
         : [];
 
       return {
