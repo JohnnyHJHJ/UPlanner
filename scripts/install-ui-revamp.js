@@ -14,7 +14,8 @@ const markers = [
   '<script src="/ui-priority.js"></script>',
   '<script src="/ui-gap-fixes.js"></script>',
   '<script src="/ui-compare-filters.js"></script>',
-  '<script src="/ui-tour-fix.js"></script>'
+  '<script src="/ui-tour-fix.js"></script>',
+  '<script src="/ui-signup-username.js"></script>'
 ];
 
 if (!fs.existsSync(indexPath)) {
