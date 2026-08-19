@@ -18,8 +18,8 @@ export default async function handler(req, res) {
     const normalized = requestedUsername.toLowerCase();
 
     if (action === 'signup') {
-      // Usernames double as stable profile tags. The first "luke" keeps
-      // "luke"; later signups become "luke2", "luke3", etc.
+      // The first "luke" keeps "luke"; later signups become
+      // "luke1", "luke2", "luke3", etc.
       let username = requestedUsername;
       let usernameNormalized = normalized;
       let suffix = 1;
@@ -32,9 +32,9 @@ export default async function handler(req, res) {
 
         if (!existing.rows.length) break;
 
-        suffix += 1;
         username = `${requestedUsername}${suffix}`;
         usernameNormalized = username.toLowerCase();
+        suffix += 1;
       }
 
       const id = cryptoRandomId();
