@@ -15,7 +15,7 @@
       body, button, input, select, textarea { font-family:'Nunito',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important; }
       h1,h2,h3,h4,h5,h6 { font-family:'Nunito',ui-sans-serif,system-ui,sans-serif !important; letter-spacing:-.025em; }
       .up-brand-logo { width:42px;height:42px;object-fit:contain;display:block;flex:0 0 auto; }
-      .up-hero-logo { width:128px;height:128px;object-fit:contain;display:block;margin:0 auto 18px;filter:drop-shadow(0 12px 30px rgba(191,8,17,.22)); }
+      .up-hero-logo { width:200px;height:200px;object-fit:contain;display:block;margin:0 auto 18px;filter:drop-shadow(0 12px 30px rgba(191,8,17,.22)); }
       .up-home-tagline { display:block!important; max-width:760px; margin:12px auto 0; color:#cbd5e1; font-size:clamp(1rem,2vw,1.22rem); line-height:1.65; font-weight:500; letter-spacing:-.01em; }
       [data-template-id="nav-brand"] { font-family:'Nunito',sans-serif !important; font-weight:800 !important; }
     `;
